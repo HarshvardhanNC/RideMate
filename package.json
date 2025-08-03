@@ -1,0 +1,17 @@
+{
+  "name": "ridemate",
+  "version": "1.0.0",
+  "description": "Ride sharing web app for students - Share the Ride. Save the Cost.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "live-server frontend/public --port=3000",
+    "build": "echo 'Build script will be added later'",
+    "start": "echo 'Start script will be added later'"
+  },
+  "keywords": ["ride-sharing", "students", "transportation", "web-app"],
+  "author": "RideMate Team",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+} 
