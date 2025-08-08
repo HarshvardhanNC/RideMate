@@ -4,7 +4,7 @@
   "description": "Ride sharing web app for students - Share the Ride. Save the Cost.",
   "main": "index.js",
   "scripts": {
-    "dev": "live-server frontend/public --port=3000",
+    "dev": "cd frontend/public && live-server --port=3000",
     "build": "echo 'Build script will be added later'",
     "start": "echo 'Start script will be added later'"
   },
