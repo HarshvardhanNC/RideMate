@@ -14,19 +14,19 @@ A web-based ride-sharing platform designed for students to coordinate auto/car s
 
 ## 🛠 Tech Stack
 
-- **Frontend**: HTML → Tailwind CSS → React (progressive upgrade)
-- **Backend**: Node.js + Express
-- **Database**: MongoDB (via Mongoose)
-- **Authentication**: JWT
-- **Real-time**: Socket.io
-- **Deployment**: Docker, GitHub Actions
+- **Frontend**: React + Vite + Tailwind CSS
+- **State Management**: React Hooks (useState, useEffect, useContext)
+- **Routing**: React Router DOM
+- **Styling**: Tailwind CSS
+- **Build Tool**: Vite
+- **Backend**: Coming soon (Node.js + Express)
+- **Database**: Coming soon (MongoDB)
 
 ## 🚀 Quick Start
 
-1. **Clone the repository**
+1. **Navigate to frontend directory**
    ```bash
-   git clone <repository-url>
-   cd RideMate
+   cd frontend
    ```
 
 2. **Install dependencies**
@@ -40,45 +40,102 @@ A web-based ride-sharing platform designed for students to coordinate auto/car s
    ```
 
 4. **Open in browser**
-   Navigate to `http://localhost:8080`
+   Navigate to `http://localhost:5173`
 
 ## 📁 Project Structure
 
 ```
 RideMate/
-├── frontend/          # Frontend application
-├── backend/           # Backend application (coming soon)
-├── docs/              # Documentation
-└── docker/            # Docker configuration (coming soon)
+├── frontend/                    # React + Vite application
+│   ├── src/
+│   │   ├── components/         # Reusable React components
+│   │   │   ├── Navbar.jsx
+│   │   │   └── Footer.jsx
+│   │   ├── pages/             # Page components
+│   │   │   ├── Home.jsx
+│   │   │   ├── Login.jsx
+│   │   │   ├── Signup.jsx
+│   │   │   ├── LiveRides.jsx
+│   │   │   ├── CreateRide.jsx
+│   │   │   └── MyRides.jsx
+│   │   ├── context/           # React Context providers
+│   │   │   └── AuthContext.jsx
+│   │   ├── utils/             # Utility functions
+│   │   │   ├── helpers.js
+│   │   │   └── notifications.js
+│   │   ├── hooks/             # Custom React hooks
+│   │   ├── assets/            # Static assets
+│   │   ├── App.jsx            # Main app component
+│   │   └── main.jsx           # Entry point
+│   ├── public/                # Public assets
+│   ├── package.json           # Dependencies and scripts
+│   ├── tailwind.config.js     # Tailwind CSS configuration
+│   ├── postcss.config.js      # PostCSS configuration
+│   └── vite.config.js         # Vite configuration
+├── .gitignore                 # Git ignore rules
+└── README.md                  # Project documentation
 ```
 
 ## 🎨 UI Features
 
 - ✅ Responsive design (mobile-friendly)
 - ✅ Modern UI with Tailwind CSS
-- ✅ Dark mode support
-- ✅ Interactive components
+- ✅ Interactive React components
 - ✅ Color-coded ride status
+- ✅ Form validation and user feedback
+- ✅ Toast notifications
 
 ## 📱 Core Pages
 
-- **Landing Page**: Login/signup and app overview
+- **Home**: Landing page with app overview
+- **Login/Signup**: User authentication
 - **Create Ride**: Form to post new rides
 - **Live Rides**: Browse and filter available rides
 - **My Rides**: User dashboard and ride management
-- **Ride Details**: Detailed view with contact information
+
+## ⚛️ React Hooks Implementation
+
+### useState Examples:
+- **Form State**: Manage form data in CreateRide component
+- **Filter State**: Handle search and filter in LiveRides
+- **Tab State**: Manage active tabs in MyRides
+
+### useEffect Examples:
+- **Data Fetching**: Load mock rides data on component mount
+- **Authentication**: Check user session on app initialization
+- **Conditional Loading**: Load user-specific data when logged in
+
+### useContext Examples:
+- **AuthContext**: Global authentication state management
+- **User State**: Share user data across all components
+- **Login/Logout**: Centralized authentication logic
+
+### Custom Hooks:
+- **useAuth**: Reusable authentication hook
+- **Error Handling**: Ensure proper context usage
 
 ## 🔄 Development Phases
 
-1. ✅ **Phase 1**: Responsive UI with Tailwind CSS
-2. 🔄 **Phase 2**: React integration and interactivity
-3. ⏳ **Phase 3**: Backend API and database
-4. ⏳ **Phase 4**: Authentication and real-time features
-5. ⏳ **Phase 5**: Deployment and CI/CD
+1. ✅ **Phase 1**: HTML + Tailwind CSS (Completed)
+2. ✅ **Phase 2**: React + Vite conversion (Completed)
+3. ✅ **Phase 3**: React Hooks implementation (Completed)
+4. ⏳ **Phase 4**: Backend API and database
+5. ⏳ **Phase 5**: Real-time features and deployment
+
+## 🎯 Current Status
+
+- ✅ **React Conversion**: Complete HTML to React conversion
+- ✅ **Component Architecture**: Modular component structure
+- ✅ **State Management**: React Hooks implementation
+- ✅ **Routing**: React Router setup
+- ✅ **Styling**: Tailwind CSS integration
+- ✅ **Mock Data**: Frontend-only development with localStorage
+- ⏳ **Backend Integration**: Coming soon
+- ⏳ **Real Database**: Coming soon
 
 ## 🤝 Contributing
 
-This is a learning project following a 10-step development plan. Each phase builds upon the previous one.
+This is a learning project demonstrating React Hooks and modern frontend development practices.
 
 ## 📄 License
 
