@@ -3,7 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useRides } from '../context/RidesContext'; // Import useRides hook for global state management
 import { formatTime, formatDate } from '../utils/helpers';
 import { showNotification } from '../utils/notifications';
-import { FaCar, FaMotorcycle, FaTruck, FaCalendarAlt, FaClock, FaDollarSign, FaUsers, FaEdit, FaTrash, FaWhatsapp } from 'react-icons/fa';
+import RideCard from '../components/RideCard';
+import { FaEdit, FaTrash, FaTruck } from 'react-icons/fa';
 
 const MyRides = () => {
     const { user } = useAuth();
@@ -44,22 +45,6 @@ const MyRides = () => {
     const handleEditRide = (rideId) => {
         // TODO: Implement edit ride functionality
         showNotification('Edit ride functionality will be implemented in the next phase!', 'info');
-    };
-
-    const getVehicleIcon = (vehicleType) => {
-        switch (vehicleType) {
-            case 'car': return <FaCar className="text-lg" />;
-            case 'auto': return <FaTruck className="text-lg" />;
-            case 'bike': return <FaMotorcycle className="text-lg" />;
-            default: return <FaTruck className="text-lg" />;
-        }
-    };
-
-    const getStatusColor = (joinedCount, totalSeats) => {
-        const percentage = (joinedCount / totalSeats) * 100;
-        if (percentage <= 33) return 'bg-green-100 text-green-800';
-        if (percentage <= 66) return 'bg-yellow-100 text-yellow-800';
-        return 'bg-red-100 text-red-800';
     };
 
     if (!user) {
@@ -154,75 +139,15 @@ const MyRides = () => {
                         ) : (
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {postedRides.map((ride) => (
-                                    <div key={ride.id || ride._id} className="bg-white rounded-lg shadow-md p-6">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div>
-                                                <h3 className="text-lg font-semibold text-gray-900">
-                                                    {ride.from} → {ride.to}
-                                                </h3>
-                                                <p className="text-sm text-gray-600 flex items-center">
-                                                    {getVehicleIcon(ride.vehicleType)} 
-                                                    <span className="ml-2">{ride.vehicleType?.toUpperCase()}</span>
-                                                </p>
-                                            </div>
-                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(ride.seatsFilled || 0, ride.seatsAvailable || 0)}`}>
-                                                {ride.seatsFilled || 0}/{ride.seatsAvailable || 0} ride-mates
-                                            </span>
-                                        </div>
-
-                                        <div className="space-y-2 mb-4">
-                                            <div className="flex items-center text-sm text-gray-600">
-                                                <FaCalendarAlt className="mr-2" />
-                                                {formatDate(ride.date)}
-                                            </div>
-                                            <div className="flex items-center text-sm text-gray-600">
-                                                <FaClock className="mr-2" />
-                                                {formatTime(ride.time)}
-                                            </div>
-                                            <div className="flex items-center text-sm text-gray-600">
-                                                <FaDollarSign className="mr-2" />
-                                                ₹{ride.price} per person
-                                            </div>
-                                        </div>
-
-                                        {/* Ride-mates List */}
-                                        <div className="mb-4">
-                                            <h4 className="text-sm font-medium text-gray-700 mb-2">Ride-mates:</h4>
-                                            {(!ride.passengers || ride.passengers.length === 0) ? (
-                                                <p className="text-sm text-gray-500">No ride-mates yet</p>
-                                            ) : (
-                                                <div className="space-y-2">
-                                                    {ride.passengers.map((passenger, index) => (
-                                                        <div key={passenger.user?._id || index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                                            <div>
-                                                                <p className="text-sm font-medium text-gray-900">{passenger.user?.name || 'Unknown'}</p>
-                                                                <p className="text-xs text-gray-500">{passenger.user?.phone || 'N/A'}</p>
-                                                            </div>
-                                                            <div className="flex gap-1">
-                                                                <a
-                                                                    href={`https://wa.me/${passenger.user?.phone}`}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="bg-green-500 text-white p-1 rounded text-xs hover:bg-green-600"
-                                                                    title="WhatsApp"
-                                                                >
-                                                                    <FaWhatsapp />
-                                                                </a>
-                                                                <button
-                                                                    onClick={() => handleRemoveUser(ride.id || ride._id, passenger.user?._id)}
-                                                                    className="bg-red-500 text-white p-1 rounded text-xs hover:bg-red-600"
-                                                                >
-                                                                    <FaTrash />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Action Buttons */}
-                                        <div className="flex gap-2">
+                                    <div key={ride.id || ride._id} className="relative">
+                                        <RideCard
+                                            ride={ride}
+                                            onRemoveUser={handleRemoveUser}
+                                            showActions={false}
+                                            showChat={true}
+                                        />
+                                        {/* Action buttons overlay */}
+                                        <div className="absolute bottom-4 left-4 right-4 flex gap-2">
                                             <button
                                                 onClick={() => handleEditRide(ride.id || ride._id)}
                                                 className="flex-1 bg-blue-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition-colors flex items-center justify-center"
@@ -270,51 +195,16 @@ const MyRides = () => {
                         ) : (
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {joinedRides.map((ride) => (
-                                    <div key={ride.id || ride._id} className="bg-white rounded-lg shadow-md p-6">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div>
-                                                <h3 className="text-lg font-semibold text-gray-900">
-                                                    {ride.from} → {ride.to}
-                                                </h3>
-                                                <p className="text-sm text-gray-600">Posted by: {ride.poster?.name || 'Unknown'}</p>
-                                                <p className="text-sm text-gray-600 flex items-center">
-                                                    {getVehicleIcon(ride.vehicleType)} 
-                                                    <span className="ml-2">{ride.vehicleType?.toUpperCase()}</span>
-                                                </p>
-                                            </div>
-                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(ride.seatsFilled || 0, ride.seatsAvailable || 0)}`}>
-                                                {ride.seatsFilled || 0}/{ride.seatsAvailable || 0} ride-mates
-                                            </span>
-                                        </div>
-
-                                        <div className="space-y-2 mb-4">
-                                            <div className="flex items-center text-sm text-gray-600">
-                                                <FaCalendarAlt className="mr-2" />
-                                                {formatDate(ride.date)}
-                                            </div>
-                                            <div className="flex items-center text-sm text-gray-600">
-                                                <FaClock className="mr-2" />
-                                                {formatTime(ride.time)}
-                                            </div>
-                                            <div className="flex items-center text-sm text-gray-600">
-                                                <FaDollarSign className="mr-2" />
-                                                ₹{ride.price} per person
-                                            </div>
-                                        </div>
-
-                                        {/* Contact Poster */}
-                                        <div className="flex gap-2">
-                                            <a
-                                                href={`https://wa.me/${ride.poster?.phone || ride.contactPhone}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex-1 bg-green-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-600 transition-colors text-center flex items-center justify-center"
-                                            >
-                                                <FaWhatsapp className="mr-2" />
-                                                WhatsApp Poster
-                                            </a>
-                                        </div>
-                                    </div>
+                                    <RideCard
+                                        key={ride.id || ride._id}
+                                        ride={ride}
+                                        onLeaveRide={() => {
+                                            // Handle leave ride functionality
+                                            console.log('Leave ride:', ride.id || ride._id);
+                                        }}
+                                        showActions={true}
+                                        showChat={true}
+                                    />
                                 ))}
                             </div>
                         )}

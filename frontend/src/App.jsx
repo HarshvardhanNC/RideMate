@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext'; // Import AuthProvider first
-import { RidesProvider } from './context/RidesContext'; // Import RidesProvider for global state management
-import { SocketProvider } from './context/SocketContext'; // Import SocketProvider for real-time updates
+import { AuthProvider } from './context/AuthContext';
+import { RidesProvider } from './context/RidesContext';
+import { ChatProvider } from './context/ChatContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -13,9 +13,9 @@ import Signup from './pages/Signup';
 
 function App() {
   return (
-    <AuthProvider> {/* Wrap app with AuthProvider first */}
-      <SocketProvider> {/* Add SocketProvider for real-time features */}
-        <RidesProvider> {/* Then wrap with RidesProvider to enable global ride state management */}
+    <AuthProvider>
+      <RidesProvider>
+        <ChatProvider>
           <Router>
             <div className="min-h-screen flex flex-col">
               <Navbar />
@@ -32,8 +32,8 @@ function App() {
               <Footer />
             </div>
           </Router>
-        </RidesProvider>
-      </SocketProvider>
+        </ChatProvider>
+      </RidesProvider>
     </AuthProvider>
   );
 }

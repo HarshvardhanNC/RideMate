@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useRides } from '../context/RidesContext'; // Import useRides hook for global state management
+import { useRides } from '../context/RidesContext';
 import { formatTime, formatDate } from '../utils/helpers';
-import { FaCar, FaMotorcycle, FaTruck, FaCalendarAlt, FaClock, FaDollarSign, FaUsers } from 'react-icons/fa';
+import RideCard from '../components/RideCard';
+import { FaTruck } from 'react-icons/fa';
 
 const LiveRides = () => {
-    // Use global rides state from RidesContext instead of local state
-    const { rides, loading, getActiveRides, filterRides, joinRide } = useRides();
-    
-    // Keep local state only for UI-specific filters and search
+    const { rides, loading, joinRide } = useRides();
     const [filter, setFilter] = useState('all');
     const [searchFrom, setSearchFrom] = useState('');
     const [searchTo, setSearchTo] = useState('');
@@ -27,55 +25,18 @@ const LiveRides = () => {
         'Churchgate Station'
     ];
 
-    // No need for useEffect to load mock data - RidesContext handles this globally
-    // The global state is automatically loaded when the RidesProvider mounts
-
-    // Get active rides from global state and apply filters
-    const activeRides = getActiveRides(); // Get all active rides from global context
-    
-    // Filter rides by today only and search criteria using global filter function
-    const filteredRides = activeRides.filter(ride => {
-        const today = new Date().toISOString().split('T')[0];
-        const isToday = ride.date === today;
-        
-        if (!isToday) return false;
-        
-        return true; // Let the global filterRides function handle the rest
-    }).sort((a, b) => new Date(a.time) - new Date(b.time)); // Sort by time
-    
-    // Apply search and availability filters using the global filter function
-    const finalFilteredRides = filterRides(filteredRides, searchFrom, searchTo, filter);
-
-    // Use global joinRide function from RidesContext instead of local implementation
     const handleJoinRide = async (rideId) => {
-        const result = await joinRide(rideId); // Use global joinRide function
-        if (result.success) {
-            // The global state will automatically update, no need for local state management
-            console.log('Successfully joined ride:', rideId);
+        try {
+            const result = await joinRide(rideId);
+            if (result.success) {
+                console.log('Successfully joined ride:', rideId);
+                // The RidesContext will automatically update the UI
+            } else {
+                console.error('Failed to join ride:', result.message);
+            }
+        } catch (error) {
+            console.error('Error joining ride:', error);
         }
-    };
-
-    const getVehicleIcon = (vehicleType) => {
-        switch (vehicleType) {
-            case 'car': return <FaCar className="text-lg" />;
-            case 'auto': return <FaTruck className="text-lg" />;
-            case 'bike': return <FaMotorcycle className="text-lg" />;
-            default: return <FaTruck className="text-lg" />;
-        }
-    };
-
-    const getStatusColor = (joinedCount, totalSeats) => {
-        const percentage = (joinedCount / totalSeats) * 100;
-        if (percentage <= 33) return 'bg-green-100 text-green-800';
-        if (percentage <= 66) return 'bg-yellow-100 text-yellow-800';
-        return 'bg-red-100 text-red-800';
-    };
-
-    const getStatusText = (joinedCount, totalSeats) => {
-        const percentage = (joinedCount / totalSeats) * 100;
-        if (percentage <= 33) return '🟩 Available';
-        if (percentage <= 66) return '🟨 Filling Up';
-        return '🟥 Full';
     };
 
     if (loading) {
@@ -158,74 +119,18 @@ const LiveRides = () => {
 
                 {/* Rides Grid */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {finalFilteredRides.map((ride) => {
-                        const isFull = ride.joinedCount >= ride.totalSeats;
-                        return (
-                            <div key={ride.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-gray-900">
-                                            {ride.from} → {ride.to}
-                                        </h3>
-                                        <p className="text-sm text-gray-600">Posted by: {ride.poster}</p>
-                                        <p className="text-sm text-gray-600 flex items-center">
-                                            {getVehicleIcon(ride.vehicleType)} 
-                                            <span className="ml-2">{ride.vehicleType.toUpperCase()}</span>
-                                        </p>
-                                    </div>
-                                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(ride.joinedCount, ride.totalSeats)}`}>
-                                        {getStatusText(ride.joinedCount, ride.totalSeats)}
-                                    </span>
-                                </div>
-
-                                <div className="space-y-2 mb-4">
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <FaCalendarAlt className="mr-2" />
-                                        {formatDate(ride.date)}
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <FaClock className="mr-2" />
-                                        {formatTime(ride.time)}
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <FaUsers className="mr-2" />
-                                        {ride.joinedCount}/{ride.totalSeats} ride-mates
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <FaDollarSign className="mr-2" />
-                                        ₹{ride.farePerPerson} per person
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-2">
-                                    {isFull ? (
-                                        <div className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium text-center">
-                                            ❌ Ride Full
-                                        </div>
-                                    ) : (
-                                        <button
-                                            onClick={() => handleJoinRide(ride.id)}
-                                            className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition-colors"
-                                        >
-                                            Join Ride
-                                        </button>
-                                    )}
-                                    <a
-                                        href={`https://wa.me/+1234567890`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="bg-green-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-600 transition-colors flex items-center"
-                                        title="Contact via WhatsApp"
-                                    >
-                                        WhatsApp
-                                    </a>
-                                </div>
-                            </div>
-                        );
-                    })}
+                    {rides.map((ride) => (
+                        <RideCard
+                            key={ride.id || ride._id}
+                            ride={ride}
+                            onJoinRide={handleJoinRide}
+                            showActions={true}
+                            showChat={true}
+                        />
+                    ))}
                 </div>
 
-                {finalFilteredRides.length === 0 && (
+                {rides.length === 0 && (
                     <div className="text-center py-12">
                         <div className="flex justify-center mb-4">
                             <FaTruck className="text-6xl text-gray-300" />

@@ -18,9 +18,13 @@ export const SocketProvider = ({ children }) => {
     const { user } = useAuth();
 
     useEffect(() => {
-        // Initialize socket connection
-        const newSocket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000', {
-            transports: ['websocket', 'polling']
+        // Initialize socket connection with auth token
+        const token = localStorage.getItem('token');
+        const newSocket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://ridemate-51.onrender.com', {
+            transports: ['websocket', 'polling'],
+            auth: {
+                token: token
+            }
         });
 
         // Connection event handlers
@@ -93,6 +97,23 @@ export const SocketProvider = ({ children }) => {
             // Show notification
         });
 
+        // Handle chat events
+        socket.on('joined-ride-chat', (data) => {
+            console.log('✅ Joined ride chat:', data);
+        });
+
+        socket.on('chat-error', (data) => {
+            console.error('❌ Chat error:', data.message);
+        });
+
+        socket.on('message-error', (data) => {
+            console.error('❌ Message error:', data.message);
+        });
+
+        socket.on('ride-deleted', (data) => {
+            console.log('🗑️ Ride deleted:', data);
+        });
+
         // Cleanup event listeners
         return () => {
             socket.off('new-ride-posted');
@@ -100,6 +121,10 @@ export const SocketProvider = ({ children }) => {
             socket.off('user-left-ride');
             socket.off('user-joined-your-ride');
             socket.off('user-left-your-ride');
+            socket.off('joined-ride-chat');
+            socket.off('chat-error');
+            socket.off('message-error');
+            socket.off('ride-deleted');
         };
     }, [socket]);
 

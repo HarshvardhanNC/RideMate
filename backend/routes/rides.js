@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Ride = require('../models/Ride');
+const Message = require('../models/Message');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -213,7 +214,22 @@ router.delete('/:id', protect, async (req, res) => {
       });
     }
 
+    // Delete all messages for this ride
+    await Message.deleteMessagesForRide(req.params.id);
+
     await Ride.findByIdAndDelete(req.params.id);
+
+    // Emit real-time event for ride deletion
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`ride_${req.params.id}`).emit('ride-deleted', {
+        rideId: req.params.id,
+        posterId: req.user._id
+      });
+      
+      // Notify chat participants
+      io.notifyRideChatDeleted(req.params.id, req.user._id);
+    }
 
     res.json({
       success: true,
@@ -393,6 +409,157 @@ router.get('/user/:userId', protect, async (req, res) => {
     });
   } catch (error) {
     console.error('Get user rides error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Get messages for a ride
+// @route   GET /api/rides/:id/messages
+// @access  Private (only ride participants)
+router.get('/:id/messages', protect, async (req, res) => {
+  try {
+    const ride = await Ride.findById(req.params.id);
+    
+    if (!ride) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ride not found'
+      });
+    }
+
+    // Check if user is the poster or a passenger
+    const isPoster = ride.poster.toString() === req.user._id.toString();
+    const isPassenger = ride.isPassenger(req.user._id);
+    
+    if (!isPoster && !isPassenger) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not authorized to view messages for this ride'
+      });
+    }
+
+    const { page = 1, limit = 50 } = req.query;
+    const messages = await Message.getMessagesForRide(req.params.id, parseInt(page), parseInt(limit));
+    
+    // Reverse to show oldest first
+    messages.reverse();
+
+    res.json({
+      success: true,
+      count: messages.length,
+      data: messages
+    });
+  } catch (error) {
+    console.error('Get messages error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Get latest messages for a ride
+// @route   GET /api/rides/:id/messages/latest
+// @access  Private (only ride participants)
+router.get('/:id/messages/latest', protect, async (req, res) => {
+  try {
+    const ride = await Ride.findById(req.params.id);
+    
+    if (!ride) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ride not found'
+      });
+    }
+
+    // Check if user is the poster or a passenger
+    const isPoster = ride.poster.toString() === req.user._id.toString();
+    const isPassenger = ride.isPassenger(req.user._id);
+    
+    if (!isPoster && !isPassenger) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not authorized to view messages for this ride'
+      });
+    }
+
+    const { limit = 50 } = req.query;
+    const messages = await Message.getLatestMessages(req.params.id, parseInt(limit));
+    
+    // Reverse to show oldest first
+    messages.reverse();
+
+    res.json({
+      success: true,
+      count: messages.length,
+      data: messages
+    });
+  } catch (error) {
+    console.error('Get latest messages error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Send a message to a ride chat
+// @route   POST /api/rides/:id/messages
+// @access  Private (only ride participants)
+router.post('/:id/messages', protect, [
+  body('text').trim().notEmpty().withMessage('Message text is required').isLength({ max: 500 }).withMessage('Message cannot be more than 500 characters')
+], async (req, res) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const ride = await Ride.findById(req.params.id);
+    
+    if (!ride) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ride not found'
+      });
+    }
+
+    // Check if user is the poster or a passenger
+    const isPoster = ride.poster.toString() === req.user._id.toString();
+    const isPassenger = ride.isPassenger(req.user._id);
+    
+    if (!isPoster && !isPassenger) {
+      return res.status(403).json({
+        success: false,
+        message: 'You are not authorized to send messages to this ride'
+      });
+    }
+
+    // Create message
+    const message = await Message.create({
+      rideId: req.params.id,
+      userId: req.user._id,
+      text: req.body.text.trim()
+    });
+
+    // Populate user info
+    await message.populate('userId', 'name email profilePicture');
+
+    res.status(201).json({
+      success: true,
+      message: 'Message sent successfully',
+      data: message
+    });
+  } catch (error) {
+    console.error('Send message error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'

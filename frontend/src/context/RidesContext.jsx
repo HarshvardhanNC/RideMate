@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { useSocket } from './SocketContext';
 import { showNotification } from '../utils/notifications';
 import apiService from '../services/api.js';
 
@@ -22,79 +21,13 @@ export const RidesProvider = ({ children }) => {
     const [rides, setRides] = useState([]);
     const [loading, setLoading] = useState(true);
     
-    // Get current user from AuthContext and socket from SocketContext
+    // Get current user from AuthContext
     const { user } = useAuth();
-    const { socket } = useSocket();
 
     // Load rides from API when component mounts
     useEffect(() => {
         loadRidesFromAPI();
     }, []);
-
-    // Real-time Socket.IO event handlers
-    useEffect(() => {
-        if (!socket) return;
-
-        // Handle new ride posted
-        socket.on('new-ride-posted', (data) => {
-            console.log('🆕 New ride posted:', data);
-            setRides(prevRides => [data.ride, ...prevRides]);
-            showNotification(`New ride posted: ${data.ride.from} to ${data.ride.to}`, 'info');
-        });
-
-        // Handle user joined ride
-        socket.on('user-joined-ride', (data) => {
-            console.log('👥 User joined ride:', data);
-            setRides(prevRides => 
-                prevRides.map(ride => 
-                    ride.id === data.rideId ? data.ride : ride
-                )
-            );
-            showNotification(`${data.userName} joined the ride`, 'success');
-        });
-
-        // Handle user left ride
-        socket.on('user-left-ride', (data) => {
-            console.log('👋 User left ride:', data);
-            setRides(prevRides => 
-                prevRides.map(ride => 
-                    ride.id === data.rideId ? data.ride : ride
-                )
-            );
-            showNotification(`${data.userName} left the ride`, 'warning');
-        });
-
-        // Handle user joined your ride
-        socket.on('user-joined-your-ride', (data) => {
-            console.log('👥 Someone joined your ride:', data);
-            setRides(prevRides => 
-                prevRides.map(ride => 
-                    ride.id === data.rideId ? data.ride : ride
-                )
-            );
-            showNotification(`${data.userName} joined your ride!`, 'success');
-        });
-
-        // Handle user left your ride
-        socket.on('user-left-your-ride', (data) => {
-            console.log('👋 Someone left your ride:', data);
-            setRides(prevRides => 
-                prevRides.map(ride => 
-                    ride.id === data.rideId ? data.ride : ride
-                )
-            );
-            showNotification(`${data.userName} left your ride`, 'warning');
-        });
-
-        // Cleanup event listeners
-        return () => {
-            socket.off('new-ride-posted');
-            socket.off('user-joined-ride');
-            socket.off('user-left-ride');
-            socket.off('user-joined-your-ride');
-            socket.off('user-left-your-ride');
-        };
-    }, [socket]);
 
     // Function to load rides from API
     const loadRidesFromAPI = async () => {

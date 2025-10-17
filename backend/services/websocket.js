@@ -1,6 +1,8 @@
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Ride = require('../models/Ride');
+const Message = require('../models/Message');
 
 class WebSocketService {
   constructor() {
@@ -99,6 +101,118 @@ class WebSocketService {
           userId: socket.userId,
           rideId: data.rideId
         });
+      });
+
+      // Chat event handlers
+      socket.on('join-ride-chat', async (data) => {
+        try {
+          const { rideId } = data;
+          
+          // Verify user has access to this ride
+          const ride = await Ride.findById(rideId);
+          if (!ride) {
+            socket.emit('chat-error', { message: 'Ride not found' });
+            return;
+          }
+
+          const isPoster = ride.poster.toString() === socket.userId;
+          const isPassenger = ride.isPassenger(socket.userId);
+          
+          if (!isPoster && !isPassenger) {
+            socket.emit('chat-error', { message: 'You are not authorized to access this chat' });
+            return;
+          }
+
+          // Join the ride chat room
+          const chatRoom = `ride_chat_${rideId}`;
+          socket.join(chatRoom);
+          
+          console.log(`User ${socket.user.name} joined chat for ride ${rideId}`);
+          
+          socket.emit('joined-ride-chat', { 
+            rideId, 
+            message: 'Successfully joined ride chat' 
+          });
+        } catch (error) {
+          console.error('Join ride chat error:', error);
+          socket.emit('chat-error', { message: 'Failed to join chat' });
+        }
+      });
+
+      socket.on('leave-ride-chat', (data) => {
+        const { rideId } = data;
+        const chatRoom = `ride_chat_${rideId}`;
+        socket.leave(chatRoom);
+        console.log(`User ${socket.user.name} left chat for ride ${rideId}`);
+      });
+
+      socket.on('send-message', async (data) => {
+        try {
+          const { rideId, text, tempId } = data;
+          
+          // Validate message
+          if (!text || text.trim().length === 0) {
+            socket.emit('message-error', { 
+              tempId, 
+              message: 'Message cannot be empty' 
+            });
+            return;
+          }
+
+          if (text.length > 500) {
+            socket.emit('message-error', { 
+              tempId, 
+              message: 'Message too long (max 500 characters)' 
+            });
+            return;
+          }
+
+          // Verify user has access to this ride
+          const ride = await Ride.findById(rideId);
+          if (!ride) {
+            socket.emit('message-error', { 
+              tempId, 
+              message: 'Ride not found' 
+            });
+            return;
+          }
+
+          const isPoster = ride.poster.toString() === socket.userId;
+          const isPassenger = ride.isPassenger(socket.userId);
+          
+          if (!isPoster && !isPassenger) {
+            socket.emit('message-error', { 
+              tempId, 
+              message: 'You are not authorized to send messages to this ride' 
+            });
+            return;
+          }
+
+          // Create message
+          const message = await Message.create({
+            rideId,
+            userId: socket.userId,
+            text: text.trim()
+          });
+
+          // Populate user info
+          await message.populate('userId', 'name email profilePicture');
+
+          // Emit to all users in the ride chat room
+          const chatRoom = `ride_chat_${rideId}`;
+          this.io.to(chatRoom).emit('new-chat-message', {
+            message: message.toJSON(),
+            tempId // For optimistic updates
+          });
+
+          console.log(`Message sent by ${socket.user.name} in ride ${rideId}`);
+        } catch (error) {
+          console.error('Send message error:', error);
+          socket.emit('message-error', { 
+            tempId: data.tempId, 
+            message: 'Failed to send message' 
+          });
+        }
       });
 
       // Handle disconnect
@@ -202,6 +316,16 @@ class WebSocketService {
   // Send custom event to all users in a room
   sendToRoom(room, event, data) {
     this.io.to(room).emit(event, data);
+  }
+
+  // Notify users in ride chat when ride is deleted
+  notifyRideChatDeleted(rideId, posterId) {
+    const chatRoom = `ride_chat_${rideId}`;
+    this.io.to(chatRoom).emit('ride-deleted', {
+      rideId,
+      posterId,
+      message: 'This ride has been deleted by the poster'
+    });
   }
 
   // Get all connected users
