@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { FaCar, FaDollarSign, FaShieldAlt } from 'react-icons/fa';
+import ApiTest from '../components/ApiTest';
 
 const Home = () => {
     return (
@@ -42,21 +44,27 @@ const Home = () => {
                     <div className="grid md:grid-cols-3 gap-8">
                         {/* Feature 1 */}
                         <div className="text-center p-6 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <div className="text-4xl mb-4 text-blue-500">🚗</div>
+                            <div className="flex justify-center mb-4">
+                                <FaCar className="text-4xl text-blue-500" />
+                            </div>
                             <h3 className="text-xl font-semibold mb-2">Easy Ride Sharing</h3>
                             <p className="text-gray-600">Post your ride details and let others join. Simple, fast, and efficient.</p>
                         </div>
                         
                         {/* Feature 2 */}
                         <div className="text-center p-6 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <div className="text-4xl mb-4 text-green-500">💰</div>
+                            <div className="flex justify-center mb-4">
+                                <FaDollarSign className="text-4xl text-green-500" />
+                            </div>
                             <h3 className="text-xl font-semibold mb-2">Save Money</h3>
                             <p className="text-gray-600">Split travel costs and save money on your daily commute.</p>
                         </div>
                         
                         {/* Feature 3 */}
                         <div className="text-center p-6 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                            <div className="text-4xl mb-4 text-yellow-500">🛡️</div>
+                            <div className="flex justify-center mb-4">
+                                <FaShieldAlt className="text-4xl text-yellow-500" />
+                            </div>
                             <h3 className="text-xl font-semibold mb-2">Safe & Secure</h3>
                             <p className="text-gray-600">Connect with verified students only. Your safety is our priority.</p>
                         </div>
@@ -94,6 +102,13 @@ const Home = () => {
                             <p className="text-gray-600">Share contact info and enjoy your ride</p>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            {/* API Test Section - Remove this after testing */}
+            <section className="py-8 bg-white">
+                <div className="max-w-4xl mx-auto px-4">
+                    <ApiTest />
                 </div>
             </section>
         </div>

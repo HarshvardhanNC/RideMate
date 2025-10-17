@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { storage } from '../utils/helpers.js';
 import { showNotification as showNotif } from '../utils/notifications.js';
+import apiService from '../services/api.js';
 
 const AuthContext = createContext();
 
@@ -27,58 +28,52 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            // TODO: Implement actual login logic with backend
-            console.log('Login attempt:', { email, password });
-            showNotif('Login functionality will be implemented in the next phase!', 'info');
+            const response = await apiService.login({ email, password });
             
-            // Simulate login success
-            const mockUser = {
-                id: '1',
-                name: 'John Doe',
-                email: email,
-                phone: '+1234567890'
-            };
-            
-            setUser(mockUser);
-            storage.set('user', mockUser);
-            showNotif('Welcome to RideMate!', 'success');
-            
-            return { success: true };
+            if (response.success) {
+                setUser(response.user);
+                storage.set('user', response.user);
+                showNotif('Welcome to RideMate!', 'success');
+                return { success: true };
+            } else {
+                showNotif(response.message || 'Login failed', 'error');
+                return { success: false, error: response.message };
+            }
         } catch (error) {
             showNotif('Login failed. Please try again.', 'error');
             return { success: false, error: error.message };
         }
     };
 
-    const signup = async (name, email, phone, password) => {
+    const signup = async (userData) => {
         try {
-            // TODO: Implement actual signup logic with backend
-            console.log('Signup attempt:', { name, email, phone, password });
-            showNotif('Signup functionality will be implemented in the next phase!', 'info');
+            const response = await apiService.register(userData);
             
-            // Simulate signup success
-            const mockUser = {
-                id: '1',
-                name: name,
-                email: email,
-                phone: phone
-            };
-            
-            setUser(mockUser);
-            storage.set('user', mockUser);
-            showNotif('Account created successfully! Welcome to RideMate!', 'success');
-            
-            return { success: true };
+            if (response.success) {
+                setUser(response.user);
+                storage.set('user', response.user);
+                showNotif('Account created successfully! Welcome to RideMate!', 'success');
+                return { success: true };
+            } else {
+                showNotif(response.message || 'Signup failed', 'error');
+                return { success: false, error: response.message };
+            }
         } catch (error) {
             showNotif('Signup failed. Please try again.', 'error');
             return { success: false, error: error.message };
         }
     };
 
-    const logout = () => {
-        setUser(null);
-        storage.remove('user');
-        showNotif('Logged out successfully', 'info');
+    const logout = async () => {
+        try {
+            await apiService.logout();
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            setUser(null);
+            storage.remove('user');
+            showNotif('Logged out successfully', 'info');
+        }
     };
 
     const value = {

@@ -1,4 +1,4 @@
-# 🚗 RideMate - Student Ride Sharing Platform
+# 🚘 RideMate - Student Ride Sharing Platform
 
 > **"Share the Ride. Save the Cost."**
 

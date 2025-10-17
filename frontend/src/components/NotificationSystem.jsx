@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { showNotification } from '../utils/notifications';
+import { FaUsers, FaCheck, FaClock, FaTimes, FaEdit, FaBell } from 'react-icons/fa';
 
 const NotificationContext = createContext();
 
@@ -93,12 +94,12 @@ export const NotificationProvider = ({ children }) => {
 
     const getNotificationIcon = (type) => {
         switch (type) {
-            case 'join': return '👥';
-            case 'joined': return '✅';
-            case 'reminder': return '⏰';
-            case 'cancel': return '❌';
-            case 'edit': return '✏️';
-            default: return '🔔';
+            case 'join': return <FaUsers className="text-lg" />;
+            case 'joined': return <FaCheck className="text-lg" />;
+            case 'reminder': return <FaClock className="text-lg" />;
+            case 'cancel': return <FaTimes className="text-lg" />;
+            case 'edit': return <FaEdit className="text-lg" />;
+            default: return <FaBell className="text-lg" />;
         }
     };
 
@@ -144,7 +145,7 @@ export const NotificationBell = () => {
                 onClick={() => setIsOpen(!isOpen)}
                 className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
             >
-                <span className="text-xl">🔔</span>
+                <FaBell className="text-xl" />
                 {unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                         {unreadCount > 9 ? '9+' : unreadCount}
@@ -185,9 +186,9 @@ export const NotificationBell = () => {
                                     >
                                         <div className="flex items-start justify-between">
                                             <div className="flex items-start space-x-3">
-                                                <span className="text-lg">
+                                                <div className="text-lg">
                                                     {getNotificationIcon(notification.type)}
-                                                </span>
+                                                </div>
                                                 <div className="flex-1">
                                                     <p className={`text-sm ${
                                                         !notification.read ? 'font-medium text-gray-900' : 'text-gray-700'

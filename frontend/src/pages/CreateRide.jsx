@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useRides } from '../context/RidesContext';
 import { useAuth } from '../context/AuthContext';
 import { showNotification } from '../utils/notifications';
+import { FaCar, FaMotorcycle, FaTruck, FaMapMarkerAlt, FaCalendarAlt, FaClock, FaDollarSign, FaFileAlt, FaChair } from 'react-icons/fa';
 
 const CreateRide = () => {
-    const { user } = useAuth();
+    const { createRide } = useRides(); // Get createRide function from global context
+    const { user } = useAuth(); // Get current user
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -33,9 +36,9 @@ const CreateRide = () => {
     ];
 
     const vehicleTypes = [
-        { value: 'auto', label: '🛺 Auto Rickshaw', seats: 3, defaultFare: 50 },
-        { value: 'car', label: '🚗 Car', seats: 4, defaultFare: 80 },
-        { value: 'bike', label: '🏍️ Bike', seats: 2, defaultFare: 30 }
+        { value: 'auto', label: 'Auto Rickshaw', seats: 3, defaultFare: 50, icon: FaTruck },
+        { value: 'car', label: 'Car', seats: 4, defaultFare: 80, icon: FaCar },
+        { value: 'bike', label: 'Motorcycle', seats: 2, defaultFare: 30, icon: FaMotorcycle }
     ];
 
     const handleChange = (e) => {
@@ -68,29 +71,33 @@ const CreateRide = () => {
         setLoading(true);
         
         try {
-            // Create ride with poster auto-added to joinedBy
+            // Transform data to match backend API expectations
             const rideData = {
-                ...formData,
-                id: Date.now(), // Mock ID
-                poster: user.name,
-                posterId: user.id,
-                joinedBy: [user.id], // Poster auto-added
-                joinedCount: 1,
-                status: 'active',
-                createdAt: new Date().toISOString()
+                from: formData.from,
+                to: formData.to,
+                vehicleType: formData.vehicleType.charAt(0).toUpperCase() + formData.vehicleType.slice(1), // Capitalize first letter
+                date: formData.date,
+                time: formData.time,
+                seatsAvailable: parseInt(formData.totalSeats),
+                price: parseFloat(formData.farePerPerson),
+                vehicleNumber: 'NA', // Default value since we don't collect this
+                college: user.college || 'Not specified', // Use user's college or default
+                contactPhone: user.phone, // Use user's phone
+                description: formData.description
             };
 
-            console.log('Creating ride:', rideData);
-            showNotification('Ride posted successfully!', 'success');
+            // Use global createRide function from RidesContext instead of local implementation
+            const result = await createRide(rideData); // Use global createRide function
             
-            // Store in localStorage for demo
-            const existingRides = JSON.parse(localStorage.getItem('rides') || '[]');
-            existingRides.push(rideData);
-            localStorage.setItem('rides', JSON.stringify(existingRides));
-            
-            setTimeout(() => {
-                navigate('/my-rides');
-            }, 1000);
+            if (result.success) {
+                // The global state will automatically update, no need for local state management
+                console.log('Ride created successfully:', result.ride);
+                setTimeout(() => {
+                    navigate('/my-rides');
+                }, 1000);
+            } else {
+                showNotification('Failed to post ride. Please try again.', 'error');
+            }
         } catch (error) {
             showNotification('Failed to post ride. Please try again.', 'error');
         } finally {
@@ -116,8 +123,9 @@ const CreateRide = () => {
                         <div className="grid md:grid-cols-2 gap-6">
                             {/* From Location */}
                             <div>
-                                <label htmlFor="from" className="block text-sm font-medium text-gray-700 mb-2">
-                                    📍 From Station
+                                <label htmlFor="from" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                    <FaMapMarkerAlt className="mr-2" />
+                                    From Station
                                 </label>
                                 <select
                                     id="from"
@@ -136,8 +144,9 @@ const CreateRide = () => {
 
                             {/* To Location */}
                             <div>
-                                <label htmlFor="to" className="block text-sm font-medium text-gray-700 mb-2">
-                                    📍 To Station
+                                <label htmlFor="to" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                    <FaMapMarkerAlt className="mr-2" />
+                                    To Station
                                 </label>
                                 <select
                                     id="to"
@@ -158,8 +167,9 @@ const CreateRide = () => {
                         <div className="grid md:grid-cols-2 gap-6">
                             {/* Vehicle Type */}
                             <div>
-                                <label htmlFor="vehicleType" className="block text-sm font-medium text-gray-700 mb-2">
-                                    🚗 Vehicle Type
+                                <label htmlFor="vehicleType" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                    <FaCar className="mr-2" />
+                                    Vehicle Type
                                 </label>
                                 <select
                                     id="vehicleType"
@@ -169,18 +179,22 @@ const CreateRide = () => {
                                     onChange={handleChange}
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 >
-                                    {vehicleTypes.map(vehicle => (
-                                        <option key={vehicle.value} value={vehicle.value}>
-                                            {vehicle.label} (Max: {vehicle.seats} seats)
-                                        </option>
-                                    ))}
+                                    {vehicleTypes.map(vehicle => {
+                                        const IconComponent = vehicle.icon;
+                                        return (
+                                            <option key={vehicle.value} value={vehicle.value}>
+                                                {vehicle.label} (Max: {vehicle.seats} seats)
+                                            </option>
+                                        );
+                                    })}
                                 </select>
                             </div>
 
                             {/* Total Seats */}
                             <div>
-                                <label htmlFor="totalSeats" className="block text-sm font-medium text-gray-700 mb-2">
-                                    💺 Total Seats (including you)
+                                <label htmlFor="totalSeats" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                    <FaChair className="mr-2" />
+                                    Total Seats (including you)
                                 </label>
                                 <input
                                     type="number"
@@ -203,8 +217,9 @@ const CreateRide = () => {
                         <div className="grid md:grid-cols-2 gap-6">
                             {/* Date */}
                             <div>
-                                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
-                                    📅 Date
+                                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                    <FaCalendarAlt className="mr-2" />
+                                    Date
                                 </label>
                                 <input
                                     type="date"
@@ -220,8 +235,9 @@ const CreateRide = () => {
 
                             {/* Time */}
                             <div>
-                                <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-2">
-                                    ⏰ Time
+                                <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                    <FaClock className="mr-2" />
+                                    Time
                                 </label>
                                 <input
                                     type="time"
@@ -237,8 +253,9 @@ const CreateRide = () => {
 
                         {/* Fare Per Person */}
                         <div>
-                            <label htmlFor="farePerPerson" className="block text-sm font-medium text-gray-700 mb-2">
-                                💰 Fare per person (₹)
+                            <label htmlFor="farePerPerson" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                <FaDollarSign className="mr-2" />
+                                Fare per person (₹)
                             </label>
                             <input
                                 type="number"
@@ -259,8 +276,9 @@ const CreateRide = () => {
 
                         {/* Description */}
                         <div>
-                            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                                📝 Additional Details (Optional)
+                            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                <FaFileAlt className="mr-2" />
+                                Additional Details (Optional)
                             </label>
                             <textarea
                                 id="description"
@@ -303,7 +321,7 @@ const CreateRide = () => {
                                     </div>
                                 ) : (
                                     <>
-                                        🛺 Share Ride
+                                        Share Ride
                                     </>
                                 )}
                             </button>

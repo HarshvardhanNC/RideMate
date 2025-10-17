@@ -1,96 +1,43 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useRides } from '../context/RidesContext'; // Import useRides hook for global state management
 import { formatTime, formatDate } from '../utils/helpers';
 import { showNotification } from '../utils/notifications';
+import { FaCar, FaMotorcycle, FaTruck, FaCalendarAlt, FaClock, FaDollarSign, FaUsers, FaEdit, FaTrash, FaWhatsapp } from 'react-icons/fa';
 
 const MyRides = () => {
     const { user } = useAuth();
+    // Use global rides state and functions from RidesContext instead of local state
+    const { loading, getPostedRides, getJoinedRides, removeUserFromRide, deleteRide } = useRides();
+    
+    // Keep local state only for UI-specific tab selection
     const [activeTab, setActiveTab] = useState('posted');
-    const [postedRides, setPostedRides] = useState([]);
-    const [joinedRides, setJoinedRides] = useState([]);
-    const [loading, setLoading] = useState(true);
+    
+    // Get user's rides from global state instead of local state
+    const postedRides = getPostedRides(); // Get rides posted by current user from global context
+    const joinedRides = getJoinedRides(); // Get rides joined by current user from global context
 
-    // Mock data - replace with actual API call
-    useEffect(() => {
-        if (!user) return;
+    // No need for useEffect to load mock data - RidesContext handles this globally
+    // The global state is automatically loaded when the RidesProvider mounts
+    // User's posted and joined rides are automatically calculated from global state
 
-        const mockPostedRides = [
-            {
-                id: 1,
-                from: 'College Campus',
-                to: 'Central Station',
-                date: new Date().toISOString().split('T')[0],
-                time: '08:00:00',
-                vehicleType: 'auto',
-                totalSeats: 3,
-                joinedCount: 2,
-                farePerPerson: 50,
-                status: 'active',
-                joinedBy: [
-                    { id: 1, name: 'John Doe', phone: '+1234567890' },
-                    { id: 2, name: 'Jane Smith', phone: '+1234567891' }
-                ]
-            },
-            {
-                id: 2,
-                from: 'Central Station',
-                to: 'Mall Area',
-                date: new Date().toISOString().split('T')[0],
-                time: '14:30:00',
-                vehicleType: 'auto',
-                totalSeats: 3,
-                joinedCount: 1,
-                farePerPerson: 40,
-                status: 'active',
-                joinedBy: [
-                    { id: 3, name: 'Mike Johnson', phone: '+1234567892' }
-                ]
-            }
-        ];
-
-        const mockJoinedRides = [
-            {
-                id: 3,
-                poster: 'Alice Brown',
-                posterPhone: '+1234567893',
-                from: 'Mall Area',
-                to: 'Airport',
-                date: new Date().toISOString().split('T')[0],
-                time: '16:00:00',
-                vehicleType: 'car',
-                totalSeats: 4,
-                joinedCount: 3,
-                farePerPerson: 80,
-                status: 'active'
-            }
-        ];
-
-        setTimeout(() => {
-            setPostedRides(mockPostedRides);
-            setJoinedRides(mockJoinedRides);
-            setLoading(false);
-        }, 1000);
-    }, [user]);
-
-    const handleRemoveUser = (rideId, userId) => {
-        // TODO: Implement remove user functionality
-        showNotification('Ride-mate removed from ride', 'success');
-        setPostedRides(prev => prev.map(ride => 
-            ride.id === rideId 
-                ? {
-                    ...ride,
-                    joinedBy: ride.joinedBy.filter(user => user.id !== userId),
-                    joinedCount: ride.joinedCount - 1
-                  }
-                : ride
-        ));
+    // Use global removeUserFromRide function from RidesContext instead of local state management
+    const handleRemoveUser = async (rideId, userId) => {
+        const result = await removeUserFromRide(rideId, userId); // Use global function
+        if (result.success) {
+            // The global state will automatically update, no need for local state management
+            console.log('Successfully removed user from ride');
+        }
     };
 
-    const handleDeleteRide = (rideId) => {
+    // Use global deleteRide function from RidesContext instead of local state management
+    const handleDeleteRide = async (rideId) => {
         if (window.confirm('Are you sure you want to delete this ride?')) {
-            // TODO: Implement delete ride functionality
-            showNotification('Ride deleted successfully', 'success');
-            setPostedRides(prev => prev.filter(ride => ride.id !== rideId));
+            const result = await deleteRide(rideId); // Use global function
+            if (result.success) {
+                // The global state will automatically update, no need for local state management
+                console.log('Successfully deleted ride');
+            }
         }
     };
 
@@ -101,10 +48,10 @@ const MyRides = () => {
 
     const getVehicleIcon = (vehicleType) => {
         switch (vehicleType) {
-            case 'car': return '🚗';
-            case 'auto': return '🛺';
-            case 'bike': return '🏍️';
-            default: return '🛺';
+            case 'car': return <FaCar className="text-lg" />;
+            case 'auto': return <FaTruck className="text-lg" />;
+            case 'bike': return <FaMotorcycle className="text-lg" />;
+            default: return <FaTruck className="text-lg" />;
         }
     };
 
@@ -140,6 +87,10 @@ const MyRides = () => {
         );
     }
 
+    // Show empty state if no rides
+    const hasPostedRides = postedRides && postedRides.length > 0;
+    const hasJoinedRides = joinedRides && joinedRides.length > 0;
+
     return (
         <div className="bg-gray-50 min-h-screen py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -148,6 +99,7 @@ const MyRides = () => {
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">My Rides</h1>
                     <p className="text-gray-600">Manage your shared rides and view joined rides</p>
                 </div>
+
 
                 {/* Tab Navigation */}
                 <div className="bg-white rounded-lg shadow-md mb-8">
@@ -161,7 +113,7 @@ const MyRides = () => {
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                             >
-                                🛺 Posted Rides ({postedRides.length})
+                                Posted Rides ({postedRides.length})
                             </button>
                             <button
                                 onClick={() => setActiveTab('joined')}
@@ -187,7 +139,9 @@ const MyRides = () => {
 
                         {postedRides.length === 0 ? (
                             <div className="text-center py-12 bg-white rounded-lg shadow-md">
-                                <div className="text-6xl text-gray-300 mb-4">🛺</div>
+                                <div className="flex justify-center mb-4">
+                                    <FaTruck className="text-6xl text-gray-300" />
+                                </div>
                                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No posted rides</h3>
                                 <p className="text-gray-600 mb-6">Start by sharing your first ride!</p>
                                 <a
@@ -200,64 +154,65 @@ const MyRides = () => {
                         ) : (
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {postedRides.map((ride) => (
-                                    <div key={ride.id} className="bg-white rounded-lg shadow-md p-6">
+                                    <div key={ride.id || ride._id} className="bg-white rounded-lg shadow-md p-6">
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
                                                 <h3 className="text-lg font-semibold text-gray-900">
                                                     {ride.from} → {ride.to}
                                                 </h3>
-                                                <p className="text-sm text-gray-600">
-                                                    {getVehicleIcon(ride.vehicleType)} {ride.vehicleType.toUpperCase()}
+                                                <p className="text-sm text-gray-600 flex items-center">
+                                                    {getVehicleIcon(ride.vehicleType)} 
+                                                    <span className="ml-2">{ride.vehicleType?.toUpperCase()}</span>
                                                 </p>
                                             </div>
-                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(ride.joinedCount, ride.totalSeats)}`}>
-                                                {ride.joinedCount}/{ride.totalSeats} ride-mates
+                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(ride.seatsFilled || 0, ride.seatsAvailable || 0)}`}>
+                                                {ride.seatsFilled || 0}/{ride.seatsAvailable || 0} ride-mates
                                             </span>
                                         </div>
 
                                         <div className="space-y-2 mb-4">
                                             <div className="flex items-center text-sm text-gray-600">
-                                                <span className="mr-2">📅</span>
+                                                <FaCalendarAlt className="mr-2" />
                                                 {formatDate(ride.date)}
                                             </div>
                                             <div className="flex items-center text-sm text-gray-600">
-                                                <span className="mr-2">⏰</span>
+                                                <FaClock className="mr-2" />
                                                 {formatTime(ride.time)}
                                             </div>
                                             <div className="flex items-center text-sm text-gray-600">
-                                                <span className="mr-2">💰</span>
-                                                ₹{ride.farePerPerson} per person
+                                                <FaDollarSign className="mr-2" />
+                                                ₹{ride.price} per person
                                             </div>
                                         </div>
 
                                         {/* Ride-mates List */}
                                         <div className="mb-4">
                                             <h4 className="text-sm font-medium text-gray-700 mb-2">Ride-mates:</h4>
-                                            {ride.joinedBy.length === 0 ? (
+                                            {(!ride.passengers || ride.passengers.length === 0) ? (
                                                 <p className="text-sm text-gray-500">No ride-mates yet</p>
                                             ) : (
                                                 <div className="space-y-2">
-                                                    {ride.joinedBy.map((rideMate) => (
-                                                        <div key={rideMate.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                                    {ride.passengers.map((passenger, index) => (
+                                                        <div key={passenger.user?._id || index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                                                             <div>
-                                                                <p className="text-sm font-medium text-gray-900">{rideMate.name}</p>
-                                                                <p className="text-xs text-gray-500">{rideMate.phone}</p>
+                                                                <p className="text-sm font-medium text-gray-900">{passenger.user?.name || 'Unknown'}</p>
+                                                                <p className="text-xs text-gray-500">{passenger.user?.phone || 'N/A'}</p>
                                                             </div>
                                                             <div className="flex gap-1">
                                                                 <a
-                                                                    href={`https://wa.me/${rideMate.phone}`}
+                                                                    href={`https://wa.me/${passenger.user?.phone}`}
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                     className="bg-green-500 text-white p-1 rounded text-xs hover:bg-green-600"
                                                                     title="WhatsApp"
                                                                 >
-                                                                    WA
+                                                                    <FaWhatsapp />
                                                                 </a>
                                                                 <button
-                                                                    onClick={() => handleRemoveUser(ride.id, rideMate.id)}
+                                                                    onClick={() => handleRemoveUser(ride.id || ride._id, passenger.user?._id)}
                                                                     className="bg-red-500 text-white p-1 rounded text-xs hover:bg-red-600"
                                                                 >
-                                                                    ❌
+                                                                    <FaTrash />
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -269,16 +224,18 @@ const MyRides = () => {
                                         {/* Action Buttons */}
                                         <div className="flex gap-2">
                                             <button
-                                                onClick={() => handleEditRide(ride.id)}
-                                                className="flex-1 bg-blue-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition-colors"
+                                                onClick={() => handleEditRide(ride.id || ride._id)}
+                                                className="flex-1 bg-blue-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition-colors flex items-center justify-center"
                                             >
-                                                ✏️ Edit
+                                                <FaEdit className="mr-1" />
+                                                Edit
                                             </button>
                                             <button
-                                                onClick={() => handleDeleteRide(ride.id)}
-                                                className="flex-1 bg-red-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition-colors"
+                                                onClick={() => handleDeleteRide(ride.id || ride._id)}
+                                                className="flex-1 bg-red-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition-colors flex items-center justify-center"
                                             >
-                                                🗑️ Delete
+                                                <FaTrash className="mr-1" />
+                                                Delete
                                             </button>
                                         </div>
                                     </div>
@@ -298,7 +255,9 @@ const MyRides = () => {
 
                         {joinedRides.length === 0 ? (
                             <div className="text-center py-12 bg-white rounded-lg shadow-md">
-                                <div className="text-6xl text-gray-300 mb-4">👥</div>
+                                <div className="flex justify-center mb-4">
+                                    <FaUsers className="text-6xl text-gray-300" />
+                                </div>
                                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No joined rides</h3>
                                 <p className="text-gray-600 mb-6">Join rides from the live rides page!</p>
                                 <a
@@ -311,45 +270,47 @@ const MyRides = () => {
                         ) : (
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {joinedRides.map((ride) => (
-                                    <div key={ride.id} className="bg-white rounded-lg shadow-md p-6">
+                                    <div key={ride.id || ride._id} className="bg-white rounded-lg shadow-md p-6">
                                         <div className="flex justify-between items-start mb-4">
                                             <div>
                                                 <h3 className="text-lg font-semibold text-gray-900">
                                                     {ride.from} → {ride.to}
                                                 </h3>
-                                                <p className="text-sm text-gray-600">Posted by: {ride.poster}</p>
-                                                <p className="text-sm text-gray-600">
-                                                    {getVehicleIcon(ride.vehicleType)} {ride.vehicleType.toUpperCase()}
+                                                <p className="text-sm text-gray-600">Posted by: {ride.poster?.name || 'Unknown'}</p>
+                                                <p className="text-sm text-gray-600 flex items-center">
+                                                    {getVehicleIcon(ride.vehicleType)} 
+                                                    <span className="ml-2">{ride.vehicleType?.toUpperCase()}</span>
                                                 </p>
                                             </div>
-                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(ride.joinedCount, ride.totalSeats)}`}>
-                                                {ride.joinedCount}/{ride.totalSeats} ride-mates
+                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(ride.seatsFilled || 0, ride.seatsAvailable || 0)}`}>
+                                                {ride.seatsFilled || 0}/{ride.seatsAvailable || 0} ride-mates
                                             </span>
                                         </div>
 
                                         <div className="space-y-2 mb-4">
                                             <div className="flex items-center text-sm text-gray-600">
-                                                <span className="mr-2">📅</span>
+                                                <FaCalendarAlt className="mr-2" />
                                                 {formatDate(ride.date)}
                                             </div>
                                             <div className="flex items-center text-sm text-gray-600">
-                                                <span className="mr-2">⏰</span>
+                                                <FaClock className="mr-2" />
                                                 {formatTime(ride.time)}
                                             </div>
                                             <div className="flex items-center text-sm text-gray-600">
-                                                <span className="mr-2">💰</span>
-                                                ₹{ride.farePerPerson} per person
+                                                <FaDollarSign className="mr-2" />
+                                                ₹{ride.price} per person
                                             </div>
                                         </div>
 
                                         {/* Contact Poster */}
                                         <div className="flex gap-2">
                                             <a
-                                                href={`https://wa.me/${ride.posterPhone}`}
+                                                href={`https://wa.me/${ride.poster?.phone || ride.contactPhone}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex-1 bg-green-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-600 transition-colors text-center"
+                                                className="flex-1 bg-green-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-600 transition-colors text-center flex items-center justify-center"
                                             >
+                                                <FaWhatsapp className="mr-2" />
                                                 WhatsApp Poster
                                             </a>
                                         </div>

@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useRides } from '../context/RidesContext'; // Import useRides hook for global state management
 import { formatTime, formatDate } from '../utils/helpers';
+import { FaCar, FaMotorcycle, FaTruck, FaCalendarAlt, FaClock, FaDollarSign, FaUsers } from 'react-icons/fa';
 
 const LiveRides = () => {
-    const [rides, setRides] = useState([]);
-    const [loading, setLoading] = useState(true);
+    // Use global rides state from RidesContext instead of local state
+    const { rides, loading, getActiveRides, filterRides, joinRide } = useRides();
+    
+    // Keep local state only for UI-specific filters and search
     const [filter, setFilter] = useState('all');
     const [searchFrom, setSearchFrom] = useState('');
     const [searchTo, setSearchTo] = useState('');
@@ -23,85 +27,40 @@ const LiveRides = () => {
         'Churchgate Station'
     ];
 
-    // Mock data - replace with actual API call
-    useEffect(() => {
-        const mockRides = [
-            {
-                id: 1,
-                poster: 'John Doe',
-                from: 'College Campus',
-                to: 'Central Station',
-                date: new Date().toISOString().split('T')[0], // Today
-                time: '08:00:00',
-                vehicleType: 'auto',
-                totalSeats: 3,
-                joinedCount: 1,
-                farePerPerson: 50,
-                status: 'active'
-            },
-            {
-                id: 2,
-                poster: 'Jane Smith',
-                from: 'Central Station',
-                to: 'Mall Area',
-                date: new Date().toISOString().split('T')[0], // Today
-                time: '14:30:00',
-                vehicleType: 'auto',
-                totalSeats: 3,
-                joinedCount: 2,
-                farePerPerson: 40,
-                status: 'active'
-            },
-            {
-                id: 3,
-                poster: 'Mike Johnson',
-                from: 'College Campus',
-                to: 'Airport',
-                date: new Date().toISOString().split('T')[0], // Today
-                time: '06:00:00',
-                vehicleType: 'car',
-                totalSeats: 4,
-                joinedCount: 3,
-                farePerPerson: 80,
-                status: 'active'
-            }
-        ];
-        
-        setTimeout(() => {
-            setRides(mockRides);
-            setLoading(false);
-        }, 1000);
-    }, []);
+    // No need for useEffect to load mock data - RidesContext handles this globally
+    // The global state is automatically loaded when the RidesProvider mounts
 
-    // Filter rides by today only and search criteria
-    const filteredRides = rides.filter(ride => {
+    // Get active rides from global state and apply filters
+    const activeRides = getActiveRides(); // Get all active rides from global context
+    
+    // Filter rides by today only and search criteria using global filter function
+    const filteredRides = activeRides.filter(ride => {
         const today = new Date().toISOString().split('T')[0];
         const isToday = ride.date === today;
         
         if (!isToday) return false;
         
-        if (searchFrom && !ride.from.toLowerCase().includes(searchFrom.toLowerCase())) return false;
-        if (searchTo && !ride.to.toLowerCase().includes(searchTo.toLowerCase())) return false;
-        
-        if (filter === 'available') {
-            return ride.joinedCount < ride.totalSeats;
-        }
-        
-        return true;
+        return true; // Let the global filterRides function handle the rest
     }).sort((a, b) => new Date(a.time) - new Date(b.time)); // Sort by time
+    
+    // Apply search and availability filters using the global filter function
+    const finalFilteredRides = filterRides(filteredRides, searchFrom, searchTo, filter);
 
-    const handleJoinRide = (rideId) => {
-        // TODO: Implement join ride functionality
-        console.log('Joining ride:', rideId);
-        alert('Join ride functionality will be implemented in the next phase!');
+    // Use global joinRide function from RidesContext instead of local implementation
+    const handleJoinRide = async (rideId) => {
+        const result = await joinRide(rideId); // Use global joinRide function
+        if (result.success) {
+            // The global state will automatically update, no need for local state management
+            console.log('Successfully joined ride:', rideId);
+        }
     };
 
     const getVehicleIcon = (vehicleType) => {
         switch (vehicleType) {
-            case 'car': return '🚗';
-            case 'auto': return '🛺';
-            case 'bike': return '🏍️';
-            default: return '🛺';
+            case 'car': return <FaCar className="text-lg" />;
+            case 'auto': return <FaTruck className="text-lg" />;
+            case 'bike': return <FaMotorcycle className="text-lg" />;
+            default: return <FaTruck className="text-lg" />;
         }
     };
 
@@ -133,7 +92,6 @@ const LiveRides = () => {
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">Live Rides</h1>
-                    <p className="text-gray-600">Find ride-mates to share auto/car fare and save money together (Today only)</p>
                 </div>
 
                 {/* Search & Filters */}
@@ -200,7 +158,7 @@ const LiveRides = () => {
 
                 {/* Rides Grid */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredRides.map((ride) => {
+                    {finalFilteredRides.map((ride) => {
                         const isFull = ride.joinedCount >= ride.totalSeats;
                         return (
                             <div key={ride.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
@@ -210,8 +168,9 @@ const LiveRides = () => {
                                             {ride.from} → {ride.to}
                                         </h3>
                                         <p className="text-sm text-gray-600">Posted by: {ride.poster}</p>
-                                        <p className="text-sm text-gray-600">
-                                            {getVehicleIcon(ride.vehicleType)} {ride.vehicleType.toUpperCase()}
+                                        <p className="text-sm text-gray-600 flex items-center">
+                                            {getVehicleIcon(ride.vehicleType)} 
+                                            <span className="ml-2">{ride.vehicleType.toUpperCase()}</span>
                                         </p>
                                     </div>
                                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(ride.joinedCount, ride.totalSeats)}`}>
@@ -221,19 +180,19 @@ const LiveRides = () => {
 
                                 <div className="space-y-2 mb-4">
                                     <div className="flex items-center text-sm text-gray-600">
-                                        <span className="mr-2">📅</span>
+                                        <FaCalendarAlt className="mr-2" />
                                         {formatDate(ride.date)}
                                     </div>
                                     <div className="flex items-center text-sm text-gray-600">
-                                        <span className="mr-2">⏰</span>
+                                        <FaClock className="mr-2" />
                                         {formatTime(ride.time)}
                                     </div>
                                     <div className="flex items-center text-sm text-gray-600">
-                                        <span className="mr-2">💺</span>
+                                        <FaUsers className="mr-2" />
                                         {ride.joinedCount}/{ride.totalSeats} ride-mates
                                     </div>
                                     <div className="flex items-center text-sm text-gray-600">
-                                        <span className="mr-2">💰</span>
+                                        <FaDollarSign className="mr-2" />
                                         ₹{ride.farePerPerson} per person
                                     </div>
                                 </div>
@@ -266,10 +225,10 @@ const LiveRides = () => {
                     })}
                 </div>
 
-                {filteredRides.length === 0 && (
+                {finalFilteredRides.length === 0 && (
                     <div className="text-center py-12">
-                        <div className="text-6xl text-gray-300 mb-4">
-                            🛺
+                        <div className="flex justify-center mb-4">
+                            <FaTruck className="text-6xl text-gray-300" />
                         </div>
                         <h3 className="text-xl font-semibold text-gray-900 mb-2">No rides available today</h3>
                         <p className="text-gray-600 mb-6">Check back later or share your own ride!</p>
