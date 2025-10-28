@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - RideMate</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #3B82F6; }
+        button {
+            background: #3B82F6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        button:hover { background: #2563EB; }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success { background: #D1FAE5; color: #065F46; border: 1px solid #10B981; }
+        .error { background: #FEE2E2; color: #991B1B; border: 1px solid #EF4444; }
+        .info { background: #DBEAFE; color: #1E40AF; border: 1px solid #3B82F6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 RideMate API Test</h1>
+        <p>Click the buttons below to test the API endpoints:</p>
+        
+        <button onclick="testHealth()">Test Health Endpoint</button>
+        <button onclick="testRegister()">Test Register (New User)</button>
+        <button onclick="testLogin()">Test Login</button>
+        <button onclick="clearResults()">Clear Results</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = message;
+        }
+
+        async function testHealth() {
+            showResult('Testing health endpoint...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                showResult(`✅ SUCCESS!\n\n${JSON.stringify(data, null, 2)}`, 'success');
+            } catch (error) {
+                showResult(`❌ ERROR!\n\n${error.message}`, 'error');
+            }
+        }
+
+        async function testRegister() {
+            showResult('Testing register endpoint...', 'info');
+            const userData = {
+                name: 'Test User ' + Date.now(),
+                email: `test${Date.now()}@example.com`,
+                password: 'password123',
+                phone: '9876543210',
+                college: 'Test College',
+                year: '3rd Year'
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData)
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`✅ REGISTRATION SUCCESS!\n\nUser: ${data.user.name}\nEmail: ${data.user.email}\nToken: ${data.token.substring(0, 30)}...`, 'success');
+                } else {
+                    showResult(`❌ REGISTRATION FAILED!\n\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ ERROR!\n\n${error.message}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            showResult('Testing login endpoint...', 'info');
+            const credentials = {
+                email: 'john@example.com',
+                password: 'password123'
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(credentials)
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`✅ LOGIN SUCCESS!\n\nUser: ${data.user.name}\nEmail: ${data.user.email}\nToken: ${data.token.substring(0, 30)}...`, 'success');
+                } else {
+                    showResult(`❌ LOGIN FAILED!\n\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ ERROR!\n\n${error.message}`, 'error');
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('result').innerHTML = '';
+        }
+
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            showResult('👋 Welcome! Click any button above to test the API.', 'info');
+        });
+    </script>
+</body>
+</html>
+

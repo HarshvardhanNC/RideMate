@@ -99,16 +99,21 @@ router.post('/', protect, [
   body('date').isISO8601().withMessage('Valid date is required'),
   body('time').matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('Valid time format is required'),
   body('seatsAvailable').isInt({ min: 1, max: 8 }).withMessage('Seats must be between 1 and 8'),
-  body('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+  body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
   body('vehicleType').isIn(['Auto', 'Car', 'Bike', 'Other']).withMessage('Valid vehicle type is required'),
   body('vehicleNumber').trim().notEmpty().withMessage('Vehicle number is required'),
   body('college').trim().notEmpty().withMessage('College name is required'),
   body('contactPhone').matches(/^[0-9]{10}$/).withMessage('Valid 10-digit phone number is required')
 ], async (req, res) => {
   try {
+    console.log('📥 Received ride creation request');
+    console.log('👤 User:', req.user ? req.user._id : 'No user');
+    console.log('📦 Request body:', JSON.stringify(req.body, null, 2));
+    
     // Check for validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.error('❌ Validation failed:', errors.array());
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -116,15 +121,21 @@ router.post('/', protect, [
       });
     }
 
+    console.log('✅ Validation passed');
+
     const rideData = {
       ...req.body,
-      poster: req.user._id
+      poster: req.user._id,
+      price: req.body.price || 0 // Default to 0 if not provided (free ride)
     };
 
+    console.log('💾 Creating ride in database with data:', rideData);
     const ride = await Ride.create(rideData);
+    console.log('✅ Ride created successfully in database:', ride._id);
 
     // Populate the created ride
     await ride.populate('poster', 'name email phone college');
+    console.log('✅ Ride populated with poster info');
 
     // Emit real-time event for new ride
     const io = req.app.get('io');
@@ -134,18 +145,26 @@ router.post('/', protect, [
         ride: ride,
         poster: ride.poster
       });
+      console.log('📡 WebSocket event emitted');
     }
 
+    console.log('✅ Sending success response to client');
     res.status(201).json({
       success: true,
       message: 'Ride created successfully',
       data: ride
     });
   } catch (error) {
-    console.error('Create ride error:', error);
+    console.error('❌ Create ride error:', error);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
+    // Send detailed error message
     res.status(500).json({
       success: false,
-      message: 'Server error'
+      message: error.message || 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.toString() : 'Server error'
     });
   }
 });

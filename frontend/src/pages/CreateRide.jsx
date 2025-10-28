@@ -17,7 +17,6 @@ const CreateRide = () => {
         date: '',
         time: '',
         totalSeats: '',
-        farePerPerson: '',
         description: ''
     });
 
@@ -36,9 +35,9 @@ const CreateRide = () => {
     ];
 
     const vehicleTypes = [
-        { value: 'auto', label: 'Auto Rickshaw', seats: 3, defaultFare: 50, icon: FaTruck },
-        { value: 'car', label: 'Car', seats: 4, defaultFare: 80, icon: FaCar },
-        { value: 'bike', label: 'Motorcycle', seats: 2, defaultFare: 30, icon: FaMotorcycle }
+        { value: 'auto', label: 'Auto Rickshaw', seats: 3, icon: FaTruck },
+        { value: 'car', label: 'Car', seats: 4, icon: FaCar },
+        { value: 'bike', label: 'Motorcycle', seats: 2, icon: FaMotorcycle }
     ];
 
     const handleChange = (e) => {
@@ -48,14 +47,13 @@ const CreateRide = () => {
             [name]: value
         }));
 
-        // Auto-set total seats and fare based on vehicle type
+        // Auto-set total seats based on vehicle type
         if (name === 'vehicleType') {
             const selectedVehicle = vehicleTypes.find(v => v.value === value);
             setFormData(prev => ({
                 ...prev,
                 vehicleType: value,
-                totalSeats: selectedVehicle ? selectedVehicle.seats.toString() : '',
-                farePerPerson: selectedVehicle ? selectedVehicle.defaultFare.toString() : ''
+                totalSeats: selectedVehicle ? selectedVehicle.seats.toString() : ''
             }));
         }
     };
@@ -79,7 +77,7 @@ const CreateRide = () => {
                 date: formData.date,
                 time: formData.time,
                 seatsAvailable: parseInt(formData.totalSeats),
-                price: parseFloat(formData.farePerPerson),
+                price: 0, // Free ride sharing - price set to 0
                 vehicleNumber: 'NA', // Default value since we don't collect this
                 college: user.college || 'Not specified', // Use user's college or default
                 contactPhone: user.phone, // Use user's phone
@@ -251,29 +249,6 @@ const CreateRide = () => {
                             </div>
                         </div>
 
-                        {/* Fare Per Person */}
-                        <div>
-                            <label htmlFor="farePerPerson" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
-                                <FaDollarSign className="mr-2" />
-                                Fare per person (₹)
-                            </label>
-                            <input
-                                type="number"
-                                id="farePerPerson"
-                                name="farePerPerson"
-                                required
-                                min="10"
-                                step="5"
-                                value={formData.farePerPerson}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="50"
-                            />
-                            <p className="text-sm text-gray-500 mt-1">
-                                This is the amount each ride-mate will pay (total fare ÷ number of people)
-                            </p>
-                        </div>
-
                         {/* Description */}
                         <div>
                             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
@@ -342,10 +317,10 @@ const CreateRide = () => {
                         💡 Tips for Great Ride-Sharing
                     </h3>
                     <ul className="space-y-2 text-sm text-blue-800">
-                        <li>• Set a fair fare that covers your total auto/car cost</li>
                         <li>• Be clear about pickup and drop-off locations</li>
                         <li>• Arrive on time and coordinate with your ride-mates</li>
-                        <li>• Split the fare equally among all participants</li>
+                        <li>• Share contact details with your ride-mates before the trip</li>
+                        <li>• Discuss and agree on fare sharing with your ride-mates</li>
                         <li>• You can edit or cancel your ride anytime</li>
                     </ul>
                 </div>

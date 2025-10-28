@@ -1,5 +1,6 @@
 // API service for RideMate backend integration
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+// Use proxy for API calls to avoid CORS issues
+const API_BASE_URL = '/api';
 
 class ApiService {
   constructor() {
@@ -40,22 +41,41 @@ class ApiService {
       ...options,
     };
 
-    console.log('API Request:', { url, config });
+    console.log('🌐 API Request:', { 
+      url, 
+      method: options.method || 'GET',
+      hasAuth: !!this.token 
+    });
 
     try {
       const response = await fetch(url, config);
-      console.log('API Response:', { status: response.status, ok: response.ok });
+      console.log('📡 API Response:', { 
+        status: response.status, 
+        ok: response.ok,
+        statusText: response.statusText 
+      });
       
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('❌ Invalid content type:', contentType);
+        throw new Error('Invalid response format from server');
+      }
+
       const data = await response.json();
-      console.log('API Data:', data);
+      console.log('📦 API Data:', data);
 
       if (!response.ok) {
-        throw new Error(data.message || 'API request failed');
+        console.error('❌ API Error Response:', data);
+        throw new Error(data.message || `API request failed with status ${response.status}`);
       }
 
       return data;
     } catch (error) {
-      console.error('API Error:', error);
+      console.error('❌ API Error:', {
+        message: error.message,
+        endpoint,
+        url
+      });
       throw error;
     }
   }

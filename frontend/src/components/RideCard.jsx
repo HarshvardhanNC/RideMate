@@ -74,6 +74,9 @@ const RideCard = ({
     // Check if user can access chat (poster or passenger)
     const canAccessChat = isPoster || isPassenger;
 
+    // Check if ride is full
+    const isFull = (ride.seatsFilled || ride.joinedCount || 0) >= (ride.seatsAvailable || ride.totalSeats || 0);
+
     const getVehicleIcon = (vehicleType) => {
         switch (vehicleType?.toLowerCase()) {
             case 'car': return <FaCar className="text-lg" />;
@@ -186,10 +189,12 @@ const RideCard = ({
                     <FaUsers className="mr-2" />
                     {ride.seatsFilled || ride.joinedCount || 0}/{ride.seatsAvailable || ride.totalSeats || 0} ride-mates
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
-                    <FaDollarSign className="mr-2" />
-                    ₹{ride.price || ride.farePerPerson} per person
-                </div>
+                {(ride.price || ride.farePerPerson) > 0 && (
+                    <div className="flex items-center text-sm text-gray-600">
+                        <FaDollarSign className="mr-2" />
+                        ₹{ride.price || ride.farePerPerson} per person
+                    </div>
+                )}
             </div>
 
             {/* Show passengers if user is the poster */}

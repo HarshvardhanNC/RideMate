@@ -33,21 +33,38 @@ export const RidesProvider = ({ children }) => {
     const loadRidesFromAPI = async () => {
         try {
             setLoading(true);
+            console.log('🔄 Loading rides from API...');
             const response = await apiService.getRides();
-            if (response.success) {
+            console.log('📦 API Response:', response);
+            
+            if (response && response.success) {
+                console.log('✅ Rides loaded successfully:', response.data?.length || 0, 'rides');
+                setRides(response.data || []);
+            } else if (response && response.data) {
+                // Handle case where success field might be missing
+                console.log('✅ Rides loaded (no success field):', response.data?.length || 0, 'rides');
                 setRides(response.data || []);
             } else {
+                console.warn('⚠️ API returned unsuccessful response, using localStorage fallback');
                 // Fallback to localStorage if API fails
                 const storedRides = JSON.parse(localStorage.getItem('rides') || '[]');
                 setRides(storedRides);
             }
         } catch (error) {
-            console.error('Error loading rides from API:', error);
+            console.error('❌ Error loading rides from API:', error);
+            console.log('🔄 Attempting localStorage fallback...');
             // Fallback to localStorage
-            const storedRides = JSON.parse(localStorage.getItem('rides') || '[]');
-            setRides(storedRides);
+            try {
+                const storedRides = JSON.parse(localStorage.getItem('rides') || '[]');
+                console.log('📦 Loaded from localStorage:', storedRides.length, 'rides');
+                setRides(storedRides);
+            } catch (storageError) {
+                console.error('❌ Error loading from localStorage:', storageError);
+                setRides([]);
+            }
         } finally {
             setLoading(false);
+            console.log('✅ Loading complete');
         }
     };
 
@@ -81,24 +98,26 @@ export const RidesProvider = ({ children }) => {
         }
 
         try {
+            console.log('🚗 Creating ride with data:', rideData);
             // Try API first
             const response = await apiService.createRide(rideData);
+            console.log('📡 Create ride API response:', response);
+            
             if (response.success) {
-                // Update global rides state
-                const updatedRides = [response.data, ...rides];
-                setRides(updatedRides);
+                console.log('✅ Ride created in database:', response.data);
                 
-                // Save to localStorage for persistence
-                saveRidesToStorage(updatedRides);
+                // Reload all rides from database to get fresh data
+                await loadRidesFromAPI();
                 
                 showNotification('Ride posted successfully!', 'success');
                 return { success: true, ride: response.data };
             } else {
+                console.error('❌ API returned unsuccessful response:', response);
                 showNotification(response.message || 'Failed to post ride', 'error');
                 return { success: false, error: response.message };
             }
         } catch (error) {
-            console.error('API Error, falling back to local storage:', error);
+            console.error('❌ Create ride API error:', error);
             
             // Fallback to local storage if API fails
             try {
@@ -134,6 +153,26 @@ export const RidesProvider = ({ children }) => {
             return { success: false, error: 'User not authenticated' };
         }
 
+        try {
+            console.log('👥 Joining ride:', rideId);
+            // Try API first
+            const response = await apiService.joinRide(rideId);
+            console.log('📡 Join ride API response:', response);
+            
+            if (response && response.success) {
+                console.log('✅ Successfully joined ride in database');
+                
+                // Reload all rides from database to get fresh data
+                await loadRidesFromAPI();
+                
+                showNotification('Successfully joined the ride!', 'success');
+                return { success: true, ride: response.data };
+            }
+        } catch (error) {
+            console.error('❌ Join ride API error:', error);
+        }
+        
+        // Fallback to local update if API fails
         try {
             const rideIndex = rides.findIndex(ride => ride.id === rideId);
             if (rideIndex === -1) {
@@ -215,13 +254,33 @@ export const RidesProvider = ({ children }) => {
     // Delete a ride - handles removing rides completely
     const deleteRide = async (rideId) => {
         try {
-            const updatedRides = rides.filter(ride => ride.id !== rideId);
+            console.log('🗑️ Deleting ride:', rideId);
+            // Try API first
+            const response = await apiService.deleteRide(rideId);
+            console.log('📡 Delete ride API response:', response);
+            
+            if (response && response.success) {
+                console.log('✅ Ride deleted from database');
+                
+                // Reload all rides from database to get fresh data
+                await loadRidesFromAPI();
+                
+                showNotification('Ride deleted successfully', 'success');
+                return { success: true };
+            }
+        } catch (error) {
+            console.error('❌ Delete ride API error:', error);
+        }
+        
+        // Fallback to local delete if API fails
+        try {
+            const updatedRides = rides.filter(ride => (ride._id || ride.id) !== rideId);
             setRides(updatedRides);
             
             // Save to localStorage
             saveRidesToStorage(updatedRides);
             
-            showNotification('Ride deleted successfully', 'success');
+            showNotification('Ride deleted successfully (offline)', 'success');
             return { success: true };
         } catch (error) {
             showNotification('Failed to delete ride. Please try again.', 'error');

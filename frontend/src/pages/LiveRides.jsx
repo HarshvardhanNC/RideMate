@@ -6,10 +6,20 @@ import RideCard from '../components/RideCard';
 import { FaTruck } from 'react-icons/fa';
 
 const LiveRides = () => {
-    const { rides, loading, joinRide } = useRides();
+    const { rides, loading, joinRide, loadRidesFromAPI } = useRides();
     const [filter, setFilter] = useState('all');
     const [searchFrom, setSearchFrom] = useState('');
     const [searchTo, setSearchTo] = useState('');
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            await loadRidesFromAPI();
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
 
     // Known stations for search
     const stations = [
@@ -51,8 +61,24 @@ const LiveRides = () => {
         <div className="bg-gray-50 min-h-screen py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Live Rides</h1>
+                <div className="mb-8 flex justify-between items-center">
+                    <h1 className="text-3xl font-bold text-gray-900">Live Rides</h1>
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-600 transition-colors disabled:bg-blue-300 flex items-center gap-2"
+                    >
+                        {isRefreshing ? (
+                            <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                Refreshing...
+                            </>
+                        ) : (
+                            <>
+                                🔄 Refresh
+                            </>
+                        )}
+                    </button>
                 </div>
 
                 {/* Search & Filters */}
@@ -130,19 +156,28 @@ const LiveRides = () => {
                     ))}
                 </div>
 
-                {rides.length === 0 && (
+                {rides.length === 0 && !loading && (
                     <div className="text-center py-12">
                         <div className="flex justify-center mb-4">
                             <FaTruck className="text-6xl text-gray-300" />
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No rides available today</h3>
-                        <p className="text-gray-600 mb-6">Check back later or share your own ride!</p>
-                        <Link
-                            to="/create-ride"
-                            className="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors"
-                        >
-                            Share a Ride
-                        </Link>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No rides available</h3>
+                        <p className="text-gray-600 mb-4">Be the first to share a ride!</p>
+                        <div className="flex gap-3 justify-center">
+                            <Link
+                                to="/create-ride"
+                                className="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors inline-block"
+                            >
+                                Share a Ride
+                            </Link>
+                            <button
+                                onClick={handleRefresh}
+                                className="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors"
+                            >
+                                Refresh
+                            </button>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-4">💡 Tip: Check the browser console (F12) for debugging info</p>
                     </div>
                 )}
             </div>
