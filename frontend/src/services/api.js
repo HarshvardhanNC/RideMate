@@ -1,6 +1,6 @@
 // API service for RideMate backend integration
-// Use proxy for API calls to avoid CORS issues
-const API_BASE_URL = '/api';
+// Use environment variable for API URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 class ApiService {
   constructor() {
