@@ -43,13 +43,12 @@ const Signup = () => {
       });
       
       if (result.success) {
-        showNotification('Account created successfully!', 'success');
         navigate('/');
-      } else {
-        showNotification(result.message || 'Registration failed', 'error');
       }
+      // Error notification is already shown by AuthContext
     } catch (error) {
-      showNotification('Registration failed. Please try again.', 'error');
+      // Error notification is already shown by AuthContext
+      console.error('Signup error:', error);
     } finally {
       setLoading(false);
     }

@@ -9,7 +9,7 @@ import { FaEdit, FaTrash, FaTruck, FaUsers } from 'react-icons/fa';
 const MyRides = () => {
     const { user } = useAuth();
     // Use global rides state and functions from RidesContext instead of local state
-    const { loading, getPostedRides, getJoinedRides, removeUserFromRide, deleteRide } = useRides();
+    const { loading, getPostedRides, getJoinedRides, removeUserFromRide, deleteRide, leaveRide } = useRides();
     
     // Keep local state only for UI-specific tab selection
     const [activeTab, setActiveTab] = useState('posted');
@@ -45,6 +45,17 @@ const MyRides = () => {
     const handleEditRide = (rideId) => {
         // TODO: Implement edit ride functionality
         showNotification('Edit ride functionality will be implemented in the next phase!', 'info');
+    };
+
+    // Use global leaveRide function from RidesContext
+    const handleLeaveRide = async (rideId) => {
+        if (window.confirm('Are you sure you want to leave this ride?')) {
+            const result = await leaveRide(rideId); // Use global function
+            if (result.success) {
+                // The global state will automatically update, no need for local state management
+                console.log('Successfully left ride');
+            }
+        }
     };
 
     if (!user) {
@@ -199,10 +210,7 @@ const MyRides = () => {
                                     <RideCard
                                         key={ride.id || ride._id}
                                         ride={ride}
-                                        onLeaveRide={() => {
-                                            // Handle leave ride functionality
-                                            console.log('Leave ride:', ride.id || ride._id);
-                                        }}
+                                        onLeaveRide={handleLeaveRide}
                                         showActions={true}
                                         showChat={true}
                                         showPassengerList={false}

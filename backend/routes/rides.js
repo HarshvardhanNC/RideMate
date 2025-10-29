@@ -296,33 +296,34 @@ router.post('/:id/join', protect, async (req, res) => {
 
     await ride.addPassenger(req.user._id);
 
-    // Populate the updated ride
-    await ride.populate('poster', 'name email phone college')
+    // Populate the updated ride - fetch fresh from DB with population
+    const populatedRide = await Ride.findById(ride._id)
+      .populate('poster', 'name email phone college')
       .populate('passengers.user', 'name phone college');
 
     // Emit real-time event for user joining ride
     const io = req.app.get('io');
     if (io) {
-      io.to(`ride-${ride._id}`).emit('user-joined-ride', {
-        rideId: ride._id,
+      io.to(`ride-${populatedRide._id}`).emit('user-joined-ride', {
+        rideId: populatedRide._id,
         userId: req.user._id,
         userName: req.user.name,
-        posterId: ride.poster._id,
-        ride: ride
+        posterId: populatedRide.poster._id,
+        ride: populatedRide
       });
       
-      io.to(`user-${ride.poster._id}`).emit('user-joined-your-ride', {
-        rideId: ride._id,
+      io.to(`user-${populatedRide.poster._id}`).emit('user-joined-your-ride', {
+        rideId: populatedRide._id,
         userId: req.user._id,
         userName: req.user.name,
-        ride: ride
+        ride: populatedRide
       });
     }
 
     res.json({
       success: true,
       message: 'Successfully joined the ride',
-      data: ride
+      data: populatedRide
     });
   } catch (error) {
     console.error('Join ride error:', error);
@@ -347,43 +348,61 @@ router.post('/:id/leave', protect, async (req, res) => {
       });
     }
 
+    // Debug logging
+    console.log('🚪 Leave ride request:', {
+      rideId: req.params.id,
+      userId: req.user._id.toString(),
+      passengers: ride.passengers.map(p => ({
+        userId: p.user.toString(),
+        status: p.status
+      }))
+    });
+
     // Check if user is in the ride
-    if (!ride.isPassenger(req.user._id)) {
+    const isPassenger = ride.isPassenger(req.user._id);
+    console.log('Is passenger check:', isPassenger);
+    
+    if (!isPassenger) {
       return res.status(400).json({
         success: false,
-        message: 'You are not in this ride'
+        message: 'You are not in this ride',
+        debug: {
+          userId: req.user._id.toString(),
+          passengers: ride.passengers.map(p => p.user.toString())
+        }
       });
     }
 
     await ride.removePassenger(req.user._id);
 
-    // Populate the updated ride
-    await ride.populate('poster', 'name email phone college')
+    // Populate the updated ride - fetch fresh from DB with population
+    const populatedRide = await Ride.findById(ride._id)
+      .populate('poster', 'name email phone college')
       .populate('passengers.user', 'name phone college');
 
     // Emit real-time event for user leaving ride
     const io = req.app.get('io');
     if (io) {
-      io.to(`ride-${ride._id}`).emit('user-left-ride', {
-        rideId: ride._id,
+      io.to(`ride-${populatedRide._id}`).emit('user-left-ride', {
+        rideId: populatedRide._id,
         userId: req.user._id,
         userName: req.user.name,
-        posterId: ride.poster._id,
-        ride: ride
+        posterId: populatedRide.poster._id,
+        ride: populatedRide
       });
       
-      io.to(`user-${ride.poster._id}`).emit('user-left-your-ride', {
-        rideId: ride._id,
+      io.to(`user-${populatedRide.poster._id}`).emit('user-left-your-ride', {
+        rideId: populatedRide._id,
         userId: req.user._id,
         userName: req.user.name,
-        ride: ride
+        ride: populatedRide
       });
     }
 
     res.json({
       success: true,
       message: 'Successfully left the ride',
-      data: ride
+      data: populatedRide
     });
   } catch (error) {
     console.error('Leave ride error:', error);

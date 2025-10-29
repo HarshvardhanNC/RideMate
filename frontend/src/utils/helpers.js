@@ -1,7 +1,27 @@
 // Utility functions for RideMate
 
 export const formatTime = (timeString) => {
+    if (!timeString) return 'N/A';
+    
+    // If timeString is already in HH:MM format, parse it
+    if (typeof timeString === 'string' && timeString.includes(':')) {
+        const [hours, minutes] = timeString.split(':');
+        const hour = parseInt(hours, 10);
+        const min = parseInt(minutes, 10);
+        
+        // Convert to 12-hour format
+        const period = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+        
+        return `${hour12}:${min.toString().padStart(2, '0')} ${period}`;
+    }
+    
+    // Fallback: try to parse as Date
     const date = new Date(timeString);
+    if (isNaN(date.getTime())) {
+        return timeString; // Return original if invalid
+    }
+    
     return date.toLocaleTimeString('en-US', { 
         hour: '2-digit', 
         minute: '2-digit',

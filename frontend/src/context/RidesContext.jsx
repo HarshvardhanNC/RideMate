@@ -185,6 +185,61 @@ export const RidesProvider = ({ children }) => {
         }
     };
 
+    // Leave a ride - handles user leaving a ride they joined
+    const leaveRide = async (rideId) => {
+        if (!user) {
+            showNotification('Please login to leave a ride', 'warning');
+            return { success: false, error: 'User not authenticated' };
+        }
+
+        try {
+            console.log('🚪 Leaving ride:', rideId);
+            console.log('👤 Current user:', {
+                _id: user._id,
+                id: user.id,
+                name: user.name
+            });
+            
+            // Try API first
+            const response = await apiService.leaveRide(rideId);
+            console.log('📡 Leave ride API response:', response);
+            
+            // If there's debug info, log it
+            if (response.debug) {
+                console.error('🔍 Backend debug info:', response.debug);
+            }
+            
+            if (response && response.success) {
+                console.log('✅ Successfully left ride in database');
+                
+                // Reload all rides from database to get fresh data
+                await loadRidesFromAPI();
+                
+                showNotification('Successfully left the ride!', 'success');
+                return { success: true, ride: response.data };
+            } else {
+                // Show the actual error message from the API
+                const errorMessage = response?.message || 'Failed to leave ride';
+                console.error('❌ API returned error:', errorMessage);
+                
+                // Log debug info if available
+                if (response?.debug) {
+                    console.error('🔍 Debug info:', response.debug);
+                    console.error('Your ID:', response.debug.userId);
+                    console.error('Passengers in ride:', response.debug.passengers);
+                }
+                
+                showNotification(errorMessage, 'error');
+                return { success: false, error: errorMessage };
+            }
+        } catch (error) {
+            console.error('❌ Leave ride API error:', error);
+            const errorMessage = error.message || 'Failed to leave ride. Please try again.';
+            showNotification(errorMessage, 'error');
+            return { success: false, error: errorMessage };
+        }
+    };
+
     // Remove a user from a ride - handles removing ride-mates from rides
     const removeUserFromRide = async (rideId, userId) => {
         try {
@@ -271,12 +326,20 @@ export const RidesProvider = ({ children }) => {
     const getJoinedRides = () => {
         if (!user) return [];
         const userId = user._id || user.id;
-        return rides.filter(ride => 
-            ride?.passengers?.some(passenger => 
-                passenger?.user?._id === userId || passenger?.user === userId
-            ) && 
-            (ride?.poster?._id !== userId && ride?.poster !== userId)
-        );
+        return rides.filter(ride => {
+            // Check if user is a passenger with status 'joined' (not 'left')
+            const isJoinedPassenger = ride?.passengers?.some(passenger => {
+                const passengerId = passenger?.user?._id || passenger?.user;
+                const isMatch = passengerId === userId;
+                const isJoined = !passenger.status || passenger.status === 'joined';
+                return isMatch && isJoined;
+            });
+            
+            // Exclude rides posted by the user
+            const isNotPoster = ride?.poster?._id !== userId && ride?.poster !== userId;
+            
+            return isJoinedPassenger && isNotPoster;
+        });
     };
 
     // Get all active rides - for "Live Rides" page
@@ -313,6 +376,7 @@ export const RidesProvider = ({ children }) => {
         // Actions
         createRide,
         joinRide,
+        leaveRide,
         removeUserFromRide,
         deleteRide,
         

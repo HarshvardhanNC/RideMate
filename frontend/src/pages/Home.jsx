@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { FaCar, FaDollarSign, FaShieldAlt } from 'react-icons/fa';
-import ApiTest from '../components/ApiTest';
 
 const Home = () => {
     return (
@@ -102,13 +101,6 @@ const Home = () => {
                             <p className="text-gray-600">Share contact info and enjoy your ride</p>
                         </div>
                     </div>
-                </div>
-            </section>
-
-            {/* API Test Section - Remove this after testing */}
-            <section className="py-8 bg-white">
-                <div className="max-w-4xl mx-auto px-4">
-                    <ApiTest />
                 </div>
             </section>
         </div>

@@ -10,12 +10,27 @@ const CreateRide = () => {
     const { user } = useAuth(); // Get current user
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    
+    // Helper function to get current date in YYYY-MM-DD format
+    const getTodayDate = () => {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    };
+
+    // Helper function to get current time in HH:MM format
+    const getCurrentTime = () => {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
+    };
+
     const [formData, setFormData] = useState({
         from: '',
         to: '',
         vehicleType: 'auto',
-        date: '',
-        time: '',
+        date: getTodayDate(), // Prefill with today's date
+        time: getCurrentTime(), // Prefill with current time
         totalSeats: '',
         description: ''
     });

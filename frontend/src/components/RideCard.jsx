@@ -65,18 +65,54 @@ const RideCard = ({
         return false;
     })();
 
-    // Check if current user is a passenger
-    const isPassenger = user && ride.passengers && 
-        ride.passengers.some(p => 
-            p.user?._id === user._id || 
-            p.user === user._id
-        );
+    // Check if current user is a passenger (with status 'joined')
+    const isPassenger = (() => {
+        if (!user || !ride.passengers) {
+            console.log('Not a passenger: no user or no passengers array');
+            return false;
+        }
+        
+        const currentUserId = (user._id || user.id)?.toString();
+        console.log('Checking if passenger:', {
+            currentUserId,
+            passengers: ride.passengers.map(p => ({
+                passengerId: (p.user?._id || p.user)?.toString(),
+                passengerName: p.user?.name,
+                status: p.status
+            }))
+        });
+        
+        // Check if user is in passengers with status 'joined' (not 'left')
+        const result = ride.passengers.some(p => {
+            const passengerId = (p.user?._id || p.user)?.toString();
+            const isMatch = passengerId === currentUserId;
+            const isJoined = !p.status || p.status === 'joined'; // If no status, assume joined for backward compatibility
+            return isMatch && isJoined;
+        });
+        
+        console.log('isPassenger result:', result);
+        return result;
+    })();
 
     // Check if user can access chat (poster or passenger)
     const canAccessChat = isPoster || isPassenger;
 
-    // Check if ride is full
-    const isFull = (ride.seatsFilled || ride.joinedCount || 0) >= (ride.seatsAvailable || ride.totalSeats || 0);
+    // Check if ride is full - count only active passengers (status 'joined')
+    const activePassengersCount = ride.passengers?.filter(p => !p.status || p.status === 'joined').length || 0;
+    const seatsFilledCount = ride.seatsFilled !== undefined ? ride.seatsFilled : activePassengersCount;
+    const isFull = seatsFilledCount >= (ride.seatsAvailable || ride.totalSeats || 0);
+    
+    console.log('RideCard state:', {
+        rideId: ride._id || ride.id,
+        isPoster,
+        isPassenger,
+        isFull,
+        canAccessChat,
+        showActions,
+        activePassengersCount,
+        seatsFilled: seatsFilledCount,
+        seatsAvailable: ride.seatsAvailable || ride.totalSeats || 0
+    });
 
     const getVehicleIcon = (vehicleType) => {
         switch (vehicleType?.toLowerCase()) {
@@ -175,11 +211,11 @@ const RideCard = ({
                     </p>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                    ride.seatsFilled || ride.joinedCount || 0, 
+                    seatsFilledCount, 
                     ride.seatsAvailable || ride.totalSeats || 0
                 )}`}>
                     {getStatusText(
-                        ride.seatsFilled || ride.joinedCount || 0, 
+                        seatsFilledCount, 
                         ride.seatsAvailable || ride.totalSeats || 0
                     )}
                 </span>
@@ -196,7 +232,7 @@ const RideCard = ({
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
                     <FaUsers className="mr-2" />
-                    {ride.seatsFilled || ride.joinedCount || 0}/{ride.seatsAvailable || ride.totalSeats || 0} ride-mates
+                    {seatsFilledCount}/{ride.seatsAvailable || ride.totalSeats || 0} ride-mates
                 </div>
             </div>
 
@@ -205,19 +241,21 @@ const RideCard = ({
                 <div className="mb-4">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Passengers:</h4>
                     <div className="space-y-2">
-                        {ride.passengers.map((passenger, index) => (
-                            <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                <div>
-                                    <p className="text-sm font-medium">{passenger.user?.name || 'Unknown'}</p>
+                        {ride.passengers
+                            .filter(passenger => !passenger.status || passenger.status === 'joined')
+                            .map((passenger, index) => (
+                                <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                    <div>
+                                        <p className="text-sm font-medium">{passenger.user?.name || 'Unknown'}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => handleRemoveUser(passenger.user?._id)}
+                                        className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
+                                    >
+                                        Remove
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={() => handleRemoveUser(passenger.user?._id)}
-                                    className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
-                                >
-                                    Remove
-                                </button>
-                            </div>
-                        ))}
+                            ))}
                     </div>
                 </div>
             )}
@@ -227,18 +265,21 @@ const RideCard = ({
                 {/* Join/Leave/Full Buttons - Only on Live Rides */}
                 {showActions && (
                     <>
-                        {isFull ? (
-                            <div className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium text-center">
-                                ❌ Ride Full
-                            </div>
-                        ) : isPassenger ? (
+                        {isPassenger ? (
+                            // If user is already a passenger, always show Leave button (even if ride is full)
                             <button
                                 onClick={handleLeaveRide}
                                 className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition-colors"
                             >
                                 Leave Ride
                             </button>
+                        ) : isFull ? (
+                            // If ride is full and user is not a passenger, show Full status
+                            <div className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium text-center">
+                                ❌ Ride Full
+                            </div>
                         ) : (
+                            // If ride has space and user is not a passenger, show Join button
                             <button
                                 onClick={handleJoinRide}
                                 className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition-colors"

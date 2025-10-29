@@ -84,8 +84,10 @@ export const AuthProvider = ({ children }) => {
             }
         } catch (error) {
             console.error('Signup error:', error);
-            showNotif('Signup failed. Please try again.', 'error');
-            return { success: false, error: error.message };
+            // Show the actual error message from the backend
+            const errorMessage = error.message || 'Signup failed. Please try again.';
+            showNotif(errorMessage, 'error');
+            return { success: false, error: errorMessage };
         }
     };
 

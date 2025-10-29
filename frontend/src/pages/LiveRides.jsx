@@ -6,7 +6,7 @@ import RideCard from '../components/RideCard';
 import { FaTruck } from 'react-icons/fa';
 
 const LiveRides = () => {
-    const { rides, loading, joinRide, loadRidesFromAPI } = useRides();
+    const { rides, loading, joinRide, leaveRide, loadRidesFromAPI } = useRides();
     const [filter, setFilter] = useState('all');
     const [searchFrom, setSearchFrom] = useState('');
     const [searchTo, setSearchTo] = useState('');
@@ -46,6 +46,20 @@ const LiveRides = () => {
             }
         } catch (error) {
             console.error('Error joining ride:', error);
+        }
+    };
+
+    const handleLeaveRide = async (rideId) => {
+        try {
+            const result = await leaveRide(rideId);
+            if (result.success) {
+                console.log('Successfully left ride:', rideId);
+                // The RidesContext will automatically update the UI
+            } else {
+                console.error('Failed to leave ride:', result.message);
+            }
+        } catch (error) {
+            console.error('Error leaving ride:', error);
         }
     };
 
@@ -150,6 +164,7 @@ const LiveRides = () => {
                             key={ride.id || ride._id}
                             ride={ride}
                             onJoinRide={handleJoinRide}
+                            onLeaveRide={handleLeaveRide}
                             showActions={true}
                             showChat={false}
                             showPassengerList={false}
