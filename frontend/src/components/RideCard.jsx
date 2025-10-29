@@ -186,31 +186,32 @@ const RideCard = ({
     };
 
     return (
-        <div className={`relative bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${
+        <div className={`relative bg-white rounded-lg shadow-md p-4 sm:p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${
             isPoster ? 'border-4 border-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 shadow-xl ring-2 ring-purple-300' : 'border border-gray-200'
         }`}>
             {/* "Your Ride" Badge */}
             {isPoster && (
-                <div className="absolute -top-3 -right-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-1 rounded-full shadow-lg flex items-center gap-1 text-sm font-bold animate-pulse">
-                    <FaStar className="text-yellow-300" />
-                    Your Ride
+                <div className="absolute -top-2 sm:-top-3 -right-2 sm:-right-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 sm:px-4 py-1 rounded-full shadow-lg flex items-center gap-1 text-xs sm:text-sm font-bold animate-pulse">
+                    <FaStar className="text-yellow-300 text-xs sm:text-sm" />
+                    <span className="hidden xs:inline">Your Ride</span>
+                    <span className="xs:hidden">Yours</span>
                 </div>
             )}
             
-            <div className="flex justify-between items-start mb-4">
-                <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 space-y-2 sm:space-y-0">
+                <div className="flex-1">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 break-words">
                         {ride.from} → {ride.to}
                     </h3>
-                    <p className={`text-sm font-medium ${isPoster ? 'text-blue-700' : 'text-gray-600'}`}>
+                    <p className={`text-xs sm:text-sm font-medium ${isPoster ? 'text-blue-700' : 'text-gray-600'}`}>
                         {getPosterDisplayName()}
                     </p>
-                    <p className="text-sm text-gray-600 flex items-center">
+                    <p className="text-xs sm:text-sm text-gray-600 flex items-center mt-1">
                         {getVehicleIcon(ride.vehicleType)} 
                         <span className="ml-2">{ride.vehicleType?.toUpperCase()}</span>
                     </p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap self-start ${getStatusColor(
                     seatsFilledCount, 
                     ride.seatsAvailable || ride.totalSeats || 0
                 )}`}>
@@ -222,35 +223,35 @@ const RideCard = ({
             </div>
 
             <div className="space-y-2 mb-4">
-                <div className="flex items-center text-sm text-gray-600">
-                    <FaCalendarAlt className="mr-2" />
-                    {formatDate(ride.date)}
+                <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                    <FaCalendarAlt className="mr-2 flex-shrink-0" />
+                    <span className="truncate">{formatDate(ride.date)}</span>
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
-                    <FaClock className="mr-2" />
-                    {formatTime(ride.time)}
+                <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                    <FaClock className="mr-2 flex-shrink-0" />
+                    <span>{formatTime(ride.time)}</span>
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
-                    <FaUsers className="mr-2" />
-                    {seatsFilledCount}/{ride.seatsAvailable || ride.totalSeats || 0} ride-mates
+                <div className="flex items-center text-xs sm:text-sm text-gray-600">
+                    <FaUsers className="mr-2 flex-shrink-0" />
+                    <span>{seatsFilledCount}/{ride.seatsAvailable || ride.totalSeats || 0} ride-mates</span>
                 </div>
             </div>
 
             {/* Show passengers if user is the poster - Only on My Rides page */}
             {showPassengerList && isPoster && ride.passengers && ride.passengers.length > 0 && (
                 <div className="mb-4">
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Passengers:</h4>
+                    <h4 className="text-xs sm:text-sm font-medium text-gray-700 mb-2">Passengers:</h4>
                     <div className="space-y-2">
                         {ride.passengers
                             .filter(passenger => !passenger.status || passenger.status === 'joined')
                             .map((passenger, index) => (
-                                <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                                    <div>
-                                        <p className="text-sm font-medium">{passenger.user?.name || 'Unknown'}</p>
+                                <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded gap-2">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs sm:text-sm font-medium truncate">{passenger.user?.name || 'Unknown'}</p>
                                     </div>
                                     <button
                                         onClick={() => handleRemoveUser(passenger.user?._id)}
-                                        className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
+                                        className="bg-red-500 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm hover:bg-red-600 transition-colors whitespace-nowrap"
                                     >
                                         Remove
                                     </button>
@@ -261,7 +262,7 @@ const RideCard = ({
             )}
 
             {/* Action Buttons Section */}
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
                 {/* Join/Leave/Full Buttons - Only on Live Rides */}
                 {showActions && (
                     <>
@@ -269,20 +270,20 @@ const RideCard = ({
                             // If user is already a passenger, always show Leave button (even if ride is full)
                             <button
                                 onClick={handleLeaveRide}
-                                className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition-colors"
+                                className="flex-1 bg-red-500 text-white px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium hover:bg-red-600 transition-colors"
                             >
                                 Leave Ride
                             </button>
                         ) : isFull ? (
                             // If ride is full and user is not a passenger, show Full status
-                            <div className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium text-center">
+                            <div className="flex-1 bg-red-500 text-white px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium text-center">
                                 ❌ Ride Full
                             </div>
                         ) : (
                             // If ride has space and user is not a passenger, show Join button
                             <button
                                 onClick={handleJoinRide}
-                                className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition-colors"
+                                className="flex-1 bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium hover:bg-blue-600 transition-colors"
                             >
                                 Join Ride
                             </button>
@@ -294,15 +295,16 @@ const RideCard = ({
                 {showChat && canAccessChat && (
                     <button
                         onClick={handleChatToggle}
-                        className={`${showActions ? '' : 'flex-1'} px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center ${
+                        className={`${showActions ? 'sm:w-auto' : 'flex-1'} w-full px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors flex items-center justify-center gap-1 ${
                             isChatOpen(ride._id || ride.id)
                                 ? 'bg-gray-500 text-white hover:bg-gray-600'
                                 : 'bg-green-500 text-white hover:bg-green-600'
                         }`}
                         title={isChatOpen(ride._id || ride.id) ? 'Close Chat Room' : 'Open Chat Room'}
                     >
-                        <FaComments className="mr-1" />
-                        {isChatOpen(ride._id || ride.id) ? 'Close Chat' : 'Chat Room'}
+                        <FaComments className="text-sm" />
+                        <span className="hidden xs:inline">{isChatOpen(ride._id || ride.id) ? 'Close Chat' : 'Chat Room'}</span>
+                        <span className="xs:hidden">{isChatOpen(ride._id || ride.id) ? 'Close' : 'Chat'}</span>
                     </button>
                 )}
             </div>

@@ -88,38 +88,42 @@ const MyRides = () => {
     const hasJoinedRides = joinedRides && joinedRides.length > 0;
 
     return (
-        <div className="bg-gray-50 min-h-screen py-8">
+        <div className="bg-gray-50 min-h-screen py-4 sm:py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">My Rides</h1>
-                    <p className="text-gray-600">Manage your shared rides and view joined rides</p>
+                <div className="mb-6 sm:mb-8">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">My Rides</h1>
+                    <p className="text-sm sm:text-base text-gray-600">Manage your shared rides and view joined rides</p>
                 </div>
 
 
                 {/* Tab Navigation */}
-                <div className="bg-white rounded-lg shadow-md mb-8">
+                <div className="bg-white rounded-lg shadow-md mb-6 sm:mb-8">
                     <div className="border-b border-gray-200">
                         <nav className="-mb-px flex">
                             <button
                                 onClick={() => setActiveTab('posted')}
-                                className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+                                className={`flex-1 py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
                                     activeTab === 'posted'
                                         ? 'border-blue-500 text-blue-600'
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                             >
-                                Posted Rides ({postedRides.length})
+                                <span className="hidden xs:inline">Posted Rides</span>
+                                <span className="xs:hidden">Posted</span>
+                                <span className="ml-1">({postedRides.length})</span>
                             </button>
                             <button
                                 onClick={() => setActiveTab('joined')}
-                                className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+                                className={`flex-1 py-3 sm:py-4 px-3 sm:px-6 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
                                     activeTab === 'joined'
                                         ? 'border-blue-500 text-blue-600'
                                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                 }`}
                             >
-                                👥 Joined Rides ({joinedRides.length})
+                                <span className="hidden xs:inline">👥 Joined Rides</span>
+                                <span className="xs:hidden">👥 Joined</span>
+                                <span className="ml-1">({joinedRides.length})</span>
                             </button>
                         </nav>
                     </div>
@@ -128,27 +132,27 @@ const MyRides = () => {
                 {/* Posted Rides Section */}
                 {activeTab === 'posted' && (
                     <div>
-                        <div className="mb-6">
-                            <h2 className="text-xl font-semibold text-gray-900 mb-2">Posted Rides</h2>
-                            <p className="text-gray-600">Manage your rides and ride-mates</p>
+                        <div className="mb-4 sm:mb-6">
+                            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Posted Rides</h2>
+                            <p className="text-sm sm:text-base text-gray-600">Manage your rides and ride-mates</p>
                         </div>
 
                         {postedRides.length === 0 ? (
-                            <div className="text-center py-12 bg-white rounded-lg shadow-md">
+                            <div className="text-center py-8 sm:py-12 bg-white rounded-lg shadow-md px-4">
                                 <div className="flex justify-center mb-4">
-                                    <FaTruck className="text-6xl text-gray-300" />
+                                    <FaTruck className="text-4xl sm:text-6xl text-gray-300" />
                                 </div>
-                                <h3 className="text-xl font-semibold text-gray-900 mb-2">No posted rides</h3>
-                                <p className="text-gray-600 mb-6">Start by sharing your first ride!</p>
+                                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No posted rides</h3>
+                                <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Start by sharing your first ride!</p>
                                 <a
                                     href="/create-ride"
-                                    className="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+                                    className="inline-block bg-blue-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:bg-blue-600 transition-colors"
                                 >
                                     Share a Ride
                                 </a>
                             </div>
                         ) : (
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                                 {postedRides.map((ride) => (
                                     <div key={ride.id || ride._id} className="flex flex-col">
                                         <RideCard
@@ -162,17 +166,17 @@ const MyRides = () => {
                                         <div className="flex gap-2 mt-3">
                                             <button
                                                 onClick={() => handleEditRide(ride.id || ride._id)}
-                                                className="flex-1 bg-blue-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition-colors flex items-center justify-center"
+                                                className="flex-1 bg-blue-500 text-white px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium hover:bg-blue-600 transition-colors flex items-center justify-center gap-1"
                                             >
-                                                <FaEdit className="mr-1" />
-                                                Edit
+                                                <FaEdit className="text-xs sm:text-sm" />
+                                                <span>Edit</span>
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteRide(ride.id || ride._id)}
-                                                className="flex-1 bg-red-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition-colors flex items-center justify-center"
+                                                className="flex-1 bg-red-500 text-white px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium hover:bg-red-600 transition-colors flex items-center justify-center gap-1"
                                             >
-                                                <FaTrash className="mr-1" />
-                                                Delete
+                                                <FaTrash className="text-xs sm:text-sm" />
+                                                <span>Delete</span>
                                             </button>
                                         </div>
                                     </div>
@@ -185,27 +189,27 @@ const MyRides = () => {
                 {/* Joined Rides Section */}
                 {activeTab === 'joined' && (
                     <div>
-                        <div className="mb-6">
-                            <h2 className="text-xl font-semibold text-gray-900 mb-2">Joined Rides</h2>
-                            <p className="text-gray-600">Rides you've joined as a ride-mate</p>
+                        <div className="mb-4 sm:mb-6">
+                            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Joined Rides</h2>
+                            <p className="text-sm sm:text-base text-gray-600">Rides you've joined as a ride-mate</p>
                         </div>
 
                         {joinedRides.length === 0 ? (
-                            <div className="text-center py-12 bg-white rounded-lg shadow-md">
+                            <div className="text-center py-8 sm:py-12 bg-white rounded-lg shadow-md px-4">
                                 <div className="flex justify-center mb-4">
-                                    <FaUsers className="text-6xl text-gray-300" />
+                                    <FaUsers className="text-4xl sm:text-6xl text-gray-300" />
                                 </div>
-                                <h3 className="text-xl font-semibold text-gray-900 mb-2">No joined rides</h3>
-                                <p className="text-gray-600 mb-6">Join rides from the live rides page!</p>
+                                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No joined rides</h3>
+                                <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Join rides from the live rides page!</p>
                                 <a
                                     href="/live-rides"
-                                    className="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors"
+                                    className="inline-block bg-blue-500 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:bg-blue-600 transition-colors"
                                 >
                                     Browse Rides
                                 </a>
                             </div>
                         ) : (
-                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                                 {joinedRides.map((ride) => (
                                     <RideCard
                                         key={ride.id || ride._id}
