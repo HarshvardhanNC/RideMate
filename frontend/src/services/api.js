@@ -170,6 +170,13 @@ class ApiService {
     });
   }
 
+  async removePassenger(rideId, passengerId) {
+    return this.request(`/rides/${rideId}/remove-passenger`, {
+      method: 'POST',
+      body: JSON.stringify({ passengerId }),
+    });
+  }
+
   async getUserRides(userId, type = 'posted') {
     return this.request(`/rides/user/${userId}?type=${type}`);
   }

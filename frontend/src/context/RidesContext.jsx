@@ -240,37 +240,34 @@ export const RidesProvider = ({ children }) => {
         }
     };
 
-    // Remove a user from a ride - handles removing ride-mates from rides
+    // Remove a user from a ride - handles removing ride-mates from rides (poster only)
     const removeUserFromRide = async (rideId, userId) => {
         try {
-            const rideIndex = rides.findIndex(ride => ride.id === rideId);
-            if (rideIndex === -1) {
-                showNotification('Ride not found', 'error');
-                return { success: false, error: 'Ride not found' };
+            console.log('🚫 Removing passenger from ride:', { rideId, userId });
+            
+            // Call the API to remove the passenger
+            const response = await apiService.removePassenger(rideId, userId);
+            console.log('📡 Remove passenger API response:', response);
+            
+            if (response && response.success) {
+                console.log('✅ Successfully removed passenger from database');
+                
+                // Reload all rides from database to get fresh data
+                await loadRidesFromAPI();
+                
+                showNotification('Passenger removed successfully!', 'success');
+                return { success: true, ride: response.data };
+            } else {
+                const errorMessage = response?.message || 'Failed to remove passenger';
+                console.error('❌ API returned error:', errorMessage);
+                showNotification(errorMessage, 'error');
+                return { success: false, error: errorMessage };
             }
-
-            const ride = rides[rideIndex];
-            
-            // Update the ride by removing the user
-            const updatedRide = {
-                ...ride,
-                joinedBy: ride.joinedBy.filter(id => id !== userId),
-                joinedCount: ride.joinedCount - 1
-            };
-
-            // Update global state
-            const updatedRides = [...rides];
-            updatedRides[rideIndex] = updatedRide;
-            setRides(updatedRides);
-            
-            // Save to localStorage
-            saveRidesToStorage(updatedRides);
-            
-            showNotification('Ride-mate removed from ride', 'success');
-            return { success: true, ride: updatedRide };
         } catch (error) {
-            showNotification('Failed to remove user. Please try again.', 'error');
-            return { success: false, error: error.message };
+            console.error('❌ Remove passenger API error:', error);
+            const errorMessage = error.message || 'Failed to remove passenger. Please try again.';
+            showNotification(errorMessage, 'error');
+            return { success: false, error: errorMessage };
         }
     };
 

@@ -413,6 +413,81 @@ router.post('/:id/leave', protect, async (req, res) => {
   }
 });
 
+// @desc    Remove a passenger from ride (poster only)
+// @route   POST /api/rides/:id/remove-passenger
+// @access  Private
+router.post('/:id/remove-passenger', protect, async (req, res) => {
+  try {
+    const { passengerId } = req.body;
+    const ride = await Ride.findById(req.params.id);
+
+    if (!ride) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ride not found'
+      });
+    }
+
+    // Check if the requester is the poster
+    if (ride.poster.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only the ride poster can remove passengers'
+      });
+    }
+
+    // Check if the passenger exists in the ride
+    const passengerIndex = ride.passengers.findIndex(
+      p => p.user.toString() === passengerId && p.status === 'joined'
+    );
+
+    if (passengerIndex === -1) {
+      return res.status(400).json({
+        success: false,
+        message: 'Passenger not found in this ride'
+      });
+    }
+
+    // Remove the passenger
+    await ride.removePassenger(passengerId);
+
+    // Populate the updated ride
+    const populatedRide = await Ride.findById(ride._id)
+      .populate('poster', 'name email phone college')
+      .populate('passengers.user', 'name phone college');
+
+    // Emit real-time event
+    const io = req.app.get('io');
+    if (io) {
+      // Notify the removed passenger
+      io.to(`user-${passengerId}`).emit('removed-from-ride', {
+        rideId: populatedRide._id,
+        rideName: `${populatedRide.from} → ${populatedRide.to}`,
+        posterName: req.user.name
+      });
+
+      // Notify all passengers in the ride
+      io.to(`ride-${populatedRide._id}`).emit('passenger-removed', {
+        rideId: populatedRide._id,
+        passengerId: passengerId,
+        ride: populatedRide
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Passenger removed successfully',
+      data: populatedRide
+    });
+  } catch (error) {
+    console.error('Remove passenger error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Server error'
+    });
+  }
+});
+
 // @desc    Get user's rides
 // @route   GET /api/rides/user/:userId
 // @access  Private
