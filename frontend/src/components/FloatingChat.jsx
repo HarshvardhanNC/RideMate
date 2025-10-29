@@ -85,13 +85,17 @@ const FloatingChat = ({ rideId, isOpen, onClose, rideInfo }) => {
                                     <p className="text-sm">No messages yet. Start the conversation!</p>
                                 </div>
                             ) : (
-                                messages.map((message) => (
-                                    <MessageBubble
-                                        key={message._id}
-                                        message={message}
-                                        isOwn={message.userId._id === user?._id}
-                                    />
-                                ))
+                                messages.map((message) => {
+                                    const messageUserId = message.userId?._id || message.userId;
+                                    const currentUserId = user?._id || user?.id;
+                                    return (
+                                        <MessageBubble
+                                            key={message._id}
+                                            message={message}
+                                            isOwn={messageUserId === currentUserId}
+                                        />
+                                    );
+                                })
                             )}
 
                             {/* Scroll anchor */}

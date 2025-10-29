@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Debug Tool</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .user-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .user-1 { border-left: 4px solid #3b82f6; }
+        .user-2 { border-left: 4px solid #10b981; }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2563eb; }
+        button:disabled { background: #9ca3af; cursor: not-allowed; }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.connected { background: #d1fae5; color: #065f46; }
+        .status.disconnected { background: #fee2e2; color: #991b1b; }
+        .log {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        .log-entry {
+            padding: 4px;
+            margin: 2px 0;
+            border-left: 3px solid transparent;
+        }
+        .log-success { border-left-color: #10b981; background: #d1fae5; }
+        .log-error { border-left-color: #ef4444; background: #fee2e2; }
+        .log-info { border-left-color: #3b82f6; background: #dbeafe; }
+        .messages {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .message {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 8px;
+        }
+        .message.own { background: #3b82f6; color: white; text-align: right; }
+        .message.other { background: #e5e7eb; color: #1f2937; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Chat Debug Tool</h1>
+    <p>Test real-time chat between two users</p>
+
+    <div class="container">
+        <!-- User 1 Panel -->
+        <div class="user-panel user-1">
+            <h2>👤 User 1 (Poster)</h2>
+            
+            <div id="status1" class="status disconnected">❌ Disconnected</div>
+            
+            <h3>Step 1: Login</h3>
+            <input type="email" id="email1" placeholder="Email" value="gita@gmail.com">
+            <input type="password" id="password1" placeholder="Password" value="gita123">
+            <button onclick="login(1)">Login</button>
+            
+            <h3>Step 2: Connect WebSocket</h3>
+            <button id="connect1" onclick="connectWebSocket(1)" disabled>Connect WebSocket</button>
+            
+            <h3>Step 3: Join Chat Room</h3>
+            <input type="text" id="rideId1" placeholder="Ride ID">
+            <button id="joinChat1" onclick="joinChat(1)" disabled>Join Chat</button>
+            
+            <h3>Step 4: Send Message</h3>
+            <textarea id="message1" placeholder="Type message..." rows="2"></textarea>
+            <button id="sendMsg1" onclick="sendMessage(1)" disabled>Send Message</button>
+            
+            <h3>Messages Received:</h3>
+            <div id="messages1" class="messages">No messages yet</div>
+            
+            <h3>Debug Log:</h3>
+            <div id="log1" class="log"></div>
+            <button onclick="clearLog(1)">Clear Log</button>
+        </div>
+
+        <!-- User 2 Panel -->
+        <div class="user-panel user-2">
+            <h2>👤 User 2 (Passenger)</h2>
+            
+            <div id="status2" class="status disconnected">❌ Disconnected</div>
+            
+            <h3>Step 1: Login</h3>
+            <input type="email" id="email2" placeholder="Email" value="">
+            <input type="password" id="password2" placeholder="Password" value="">
+            <button onclick="login(2)">Login</button>
+            
+            <h3>Step 2: Connect WebSocket</h3>
+            <button id="connect2" onclick="connectWebSocket(2)" disabled>Connect WebSocket</button>
+            
+            <h3>Step 3: Join Chat Room</h3>
+            <input type="text" id="rideId2" placeholder="Ride ID">
+            <button id="joinChat2" onclick="joinChat(2)" disabled>Join Chat</button>
+            
+            <h3>Step 4: Send Message</h3>
+            <textarea id="message2" placeholder="Type message..." rows="2"></textarea>
+            <button id="sendMsg2" onclick="sendMessage(2)" disabled>Send Message</button>
+            
+            <h3>Messages Received:</h3>
+            <div id="messages2" class="messages">No messages yet</div>
+            
+            <h3>Debug Log:</h3>
+            <div id="log2" class="log"></div>
+            <button onclick="clearLog(2)">Clear Log</button>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            1: { token: null, socket: null, userId: null, messages: [] },
+            2: { token: null, socket: null, userId: null, messages: [] }
+        };
+
+        function log(user, message, type = 'info') {
+            const logDiv = document.getElementById(`log${user}`);
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`User ${user}:`, message);
+        }
+
+        function clearLog(user) {
+            document.getElementById(`log${user}`).innerHTML = '';
+        }
+
+        function updateStatus(user, connected) {
+            const statusDiv = document.getElementById(`status${user}`);
+            if (connected) {
+                statusDiv.className = 'status connected';
+                statusDiv.textContent = '✅ Connected';
+            } else {
+                statusDiv.className = 'status disconnected';
+                statusDiv.textContent = '❌ Disconnected';
+            }
+        }
+
+        function addMessage(user, text, isOwn) {
+            const messagesDiv = document.getElementById(`messages${user}`);
+            if (state[user].messages.length === 0) {
+                messagesDiv.innerHTML = '';
+            }
+            
+            const msg = document.createElement('div');
+            msg.className = `message ${isOwn ? 'own' : 'other'}`;
+            msg.textContent = text;
+            messagesDiv.appendChild(msg);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            state[user].messages.push({ text, isOwn });
+        }
+
+        async function login(user) {
+            const email = document.getElementById(`email${user}`).value;
+            const password = document.getElementById(`password${user}`).value;
+            
+            if (!email || !password) {
+                log(user, '❌ Please enter email and password', 'error');
+                return;
+            }
+            
+            log(user, `🔐 Logging in as ${email}...`, 'info');
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.token) {
+                    state[user].token = data.token;
+                    state[user].userId = data.user._id;
+                    log(user, `✅ Logged in successfully! User ID: ${data.user._id}`, 'success');
+                    log(user, `Token: ${data.token.substring(0, 20)}...`, 'info');
+                    document.getElementById(`connect${user}`).disabled = false;
+                } else {
+                    log(user, `❌ Login failed: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                log(user, `❌ Login error: ${error.message}`, 'error');
+            }
+        }
+
+        function connectWebSocket(user) {
+            if (!state[user].token) {
+                log(user, '❌ Please login first', 'error');
+                return;
+            }
+            
+            log(user, '🔌 Connecting to WebSocket...', 'info');
+            
+            const socket = io('http://localhost:5000', {
+                auth: { token: state[user].token },
+                transports: ['websocket', 'polling']
+            });
+            
+            socket.on('connect', () => {
+                log(user, `✅ WebSocket connected! Socket ID: ${socket.id}`, 'success');
+                updateStatus(user, true);
+                document.getElementById(`joinChat${user}`).disabled = false;
+            });
+            
+            socket.on('disconnect', () => {
+                log(user, '❌ WebSocket disconnected', 'error');
+                updateStatus(user, false);
+            });
+            
+            socket.on('connected', (data) => {
+                log(user, `📨 Connected event received: ${data.message}`, 'success');
+            });
+            
+            socket.on('joined-ride-chat', (data) => {
+                log(user, `✅ Joined ride chat: ${JSON.stringify(data)}`, 'success');
+                document.getElementById(`sendMsg${user}`).disabled = false;
+            });
+            
+            socket.on('new-chat-message', (data) => {
+                log(user, `📨 New message received!`, 'success');
+                log(user, `Message: ${data.message.text}`, 'info');
+                log(user, `From: ${data.message.userId.name}`, 'info');
+                
+                const isOwn = data.message.userId._id === state[user].userId;
+                addMessage(user, `${data.message.userId.name}: ${data.message.text}`, isOwn);
+            });
+            
+            socket.on('chat-error', (data) => {
+                log(user, `❌ Chat error: ${data.message}`, 'error');
+            });
+            
+            socket.on('message-error', (data) => {
+                log(user, `❌ Message error: ${data.message}`, 'error');
+            });
+            
+            state[user].socket = socket;
+        }
+
+        function joinChat(user) {
+            const rideId = document.getElementById(`rideId${user}`).value;
+            
+            if (!rideId) {
+                log(user, '❌ Please enter a Ride ID', 'error');
+                return;
+            }
+            
+            if (!state[user].socket) {
+                log(user, '❌ WebSocket not connected', 'error');
+                return;
+            }
+            
+            log(user, `🚪 Joining chat room for ride: ${rideId}`, 'info');
+            state[user].socket.emit('join-ride-chat', { rideId });
+        }
+
+        function sendMessage(user) {
+            const rideId = document.getElementById(`rideId${user}`).value;
+            const text = document.getElementById(`message${user}`).value;
+            
+            if (!text.trim()) {
+                log(user, '❌ Message cannot be empty', 'error');
+                return;
+            }
+            
+            if (!state[user].socket) {
+                log(user, '❌ WebSocket not connected', 'error');
+                return;
+            }
+            
+            log(user, `📤 Sending message: "${text}"`, 'info');
+            
+            state[user].socket.emit('send-message', {
+                rideId: rideId,
+                text: text.trim(),
+                tempId: `temp_${Date.now()}`
+            });
+            
+            document.getElementById(`message${user}`).value = '';
+        }
+
+        // Auto-fill ride ID for User 2 when User 1 sets it
+        document.getElementById('rideId1').addEventListener('input', (e) => {
+            document.getElementById('rideId2').value = e.target.value;
+        });
+    </script>
+</body>
+</html>
+

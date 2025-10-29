@@ -20,7 +20,12 @@ export const SocketProvider = ({ children }) => {
     useEffect(() => {
         // Initialize socket connection with auth token
         const token = localStorage.getItem('token');
-        const newSocket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'https://ridemate-51.onrender.com', {
+        const backendURL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+        
+        console.log('🔌 Connecting to WebSocket:', backendURL);
+        console.log('🔑 Has token:', !!token);
+        
+        const newSocket = io(backendURL, {
             transports: ['websocket', 'polling'],
             auth: {
                 token: token

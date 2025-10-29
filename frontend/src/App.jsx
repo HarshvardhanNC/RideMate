@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { SocketProvider } from './context/SocketContext';
 import { RidesProvider } from './context/RidesContext';
 import { ChatProvider } from './context/ChatContext';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -16,28 +17,30 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <RidesProvider>
-          <ChatProvider>
-            <Router>
-              <div className="min-h-screen flex flex-col">
-                <Navbar />
-                <main className="flex-grow">
-                  <ErrorBoundary>
-                    <Routes>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/live-rides" element={<LiveRides />} />
-                      <Route path="/create-ride" element={<CreateRide />} />
-                      <Route path="/my-rides" element={<MyRides />} />
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/signup" element={<Signup />} />
-                    </Routes>
-                  </ErrorBoundary>
-                </main>
-                <Footer />
-              </div>
-            </Router>
-          </ChatProvider>
-        </RidesProvider>
+        <SocketProvider>
+          <RidesProvider>
+            <ChatProvider>
+              <Router>
+                <div className="min-h-screen flex flex-col">
+                  <Navbar />
+                  <main className="flex-grow">
+                    <ErrorBoundary>
+                      <Routes>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/live-rides" element={<LiveRides />} />
+                        <Route path="/create-ride" element={<CreateRide />} />
+                        <Route path="/my-rides" element={<MyRides />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/signup" element={<Signup />} />
+                      </Routes>
+                    </ErrorBoundary>
+                  </main>
+                  <Footer />
+                </div>
+              </Router>
+            </ChatProvider>
+          </RidesProvider>
+        </SocketProvider>
       </AuthProvider>
     </ErrorBoundary>
   );
