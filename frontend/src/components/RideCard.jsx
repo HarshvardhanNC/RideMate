@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useChat } from '../context/ChatContext';
 import FloatingChat from './FloatingChat';
-import { FaCar, FaMotorcycle, FaTruck, FaCalendarAlt, FaClock, FaDollarSign, FaUsers, FaWhatsapp, FaComments } from 'react-icons/fa';
+import { FaCar, FaMotorcycle, FaTruck, FaCalendarAlt, FaClock, FaUsers, FaComments, FaStar } from 'react-icons/fa';
 import { formatTime, formatDate } from '../utils/helpers';
 
 const RideCard = ({ 
@@ -11,7 +11,8 @@ const RideCard = ({
     onLeaveRide, 
     onRemoveUser, 
     showActions = true,
-    showChat = true 
+    showChat = true,
+    showPassengerList = false  // New prop to control passenger list visibility
 }) => {
     const { user } = useAuth();
     const { toggleChat, isChatOpen } = useChat();
@@ -149,15 +150,23 @@ const RideCard = ({
     };
 
     return (
-        <div className={`bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${
-            isPoster ? 'border-blue-400 bg-blue-50' : ''
+        <div className={`relative bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 ${
+            isPoster ? 'border-4 border-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 shadow-xl ring-2 ring-purple-300' : 'border border-gray-200'
         }`}>
+            {/* "Your Ride" Badge */}
+            {isPoster && (
+                <div className="absolute -top-3 -right-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-1 rounded-full shadow-lg flex items-center gap-1 text-sm font-bold animate-pulse">
+                    <FaStar className="text-yellow-300" />
+                    Your Ride
+                </div>
+            )}
+            
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="text-lg font-semibold text-gray-900">
                         {ride.from} → {ride.to}
                     </h3>
-                    <p className="text-sm text-gray-600">
+                    <p className={`text-sm font-medium ${isPoster ? 'text-blue-700' : 'text-gray-600'}`}>
                         {getPosterDisplayName()}
                     </p>
                     <p className="text-sm text-gray-600 flex items-center">
@@ -189,16 +198,10 @@ const RideCard = ({
                     <FaUsers className="mr-2" />
                     {ride.seatsFilled || ride.joinedCount || 0}/{ride.seatsAvailable || ride.totalSeats || 0} ride-mates
                 </div>
-                {(ride.price || ride.farePerPerson) > 0 && (
-                    <div className="flex items-center text-sm text-gray-600">
-                        <FaDollarSign className="mr-2" />
-                        ₹{ride.price || ride.farePerPerson} per person
-                    </div>
-                )}
             </div>
 
-            {/* Show passengers if user is the poster */}
-            {isPoster && ride.passengers && ride.passengers.length > 0 && (
+            {/* Show passengers if user is the poster - Only on My Rides page */}
+            {showPassengerList && isPoster && ride.passengers && ride.passengers.length > 0 && (
                 <div className="mb-4">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Passengers:</h4>
                     <div className="space-y-2">
@@ -206,82 +209,62 @@ const RideCard = ({
                             <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                                 <div>
                                     <p className="text-sm font-medium">{passenger.user?.name || 'Unknown'}</p>
-                                    <p className="text-xs text-gray-500">{passenger.user?.phone || ''}</p>
                                 </div>
-                                <div className="flex gap-1">
-                                    <a
-                                        href={`https://wa.me/${passenger.user?.phone}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="bg-green-500 text-white p-1 rounded text-xs hover:bg-green-600"
-                                        title="WhatsApp"
-                                    >
-                                        <FaWhatsapp />
-                                    </a>
-                                    <button
-                                        onClick={() => handleRemoveUser(passenger.user?._id)}
-                                        className="bg-red-500 text-white p-1 rounded text-xs hover:bg-red-600"
-                                    >
-                                        Remove
-                                    </button>
-                                </div>
+                                <button
+                                    onClick={() => handleRemoveUser(passenger.user?._id)}
+                                    className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
+                                >
+                                    Remove
+                                </button>
                             </div>
                         ))}
                     </div>
                 </div>
             )}
 
-            {/* Action Buttons */}
-            {showActions && (
-                <div className="flex gap-2">
-                    {isFull ? (
-                        <div className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium text-center">
-                            ❌ Ride Full
-                        </div>
-                    ) : isPassenger ? (
-                        <button
-                            onClick={handleLeaveRide}
-                            className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition-colors"
-                        >
-                            Leave Ride
-                        </button>
-                    ) : (
-                        <button
-                            onClick={handleJoinRide}
-                            className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition-colors"
-                        >
-                            Join Ride
-                        </button>
-                    )}
-                    
-                    {/* Chat Button (replaces WhatsApp) */}
-                    {showChat && canAccessChat ? (
-                        <button
-                            onClick={handleChatToggle}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center ${
-                                isChatOpen(ride._id || ride.id)
-                                    ? 'bg-gray-500 text-white hover:bg-gray-600'
-                                    : 'bg-blue-500 text-white hover:bg-blue-600'
-                            }`}
-                            title={isChatOpen(ride._id || ride.id) ? 'Close Chat' : 'Open Chat'}
-                        >
-                            <FaComments className="mr-1" />
-                            {isChatOpen(ride._id || ride.id) ? 'Close' : 'Chat'}
-                        </button>
-                    ) : (
-                        <a
-                            href={`https://wa.me/${ride.poster?.phone || ride.contactPhone || '1234567890'}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="bg-green-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-600 transition-colors flex items-center"
-                            title="Contact via WhatsApp"
-                        >
-                            <FaWhatsapp className="mr-1" />
-                            WhatsApp
-                        </a>
-                    )}
-                </div>
-            )}
+            {/* Action Buttons Section */}
+            <div className="flex gap-2">
+                {/* Join/Leave/Full Buttons - Only on Live Rides */}
+                {showActions && (
+                    <>
+                        {isFull ? (
+                            <div className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium text-center">
+                                ❌ Ride Full
+                            </div>
+                        ) : isPassenger ? (
+                            <button
+                                onClick={handleLeaveRide}
+                                className="flex-1 bg-red-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-600 transition-colors"
+                            >
+                                Leave Ride
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleJoinRide}
+                                className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition-colors"
+                            >
+                                Join Ride
+                            </button>
+                        )}
+                    </>
+                )}
+                
+                {/* Chat Button - Show on My Rides page for participants */}
+                {showChat && canAccessChat && (
+                    <button
+                        onClick={handleChatToggle}
+                        className={`${showActions ? '' : 'flex-1'} px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center justify-center ${
+                            isChatOpen(ride._id || ride.id)
+                                ? 'bg-gray-500 text-white hover:bg-gray-600'
+                                : 'bg-green-500 text-white hover:bg-green-600'
+                        }`}
+                        title={isChatOpen(ride._id || ride.id) ? 'Close Chat Room' : 'Open Chat Room'}
+                    >
+                        <FaComments className="mr-1" />
+                        {isChatOpen(ride._id || ride.id) ? 'Close Chat' : 'Chat Room'}
+                    </button>
+                )}
+            </div>
 
             {/* Floating Chat */}
             {showChat && canAccessChat && (

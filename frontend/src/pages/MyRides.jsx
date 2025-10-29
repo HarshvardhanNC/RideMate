@@ -4,7 +4,7 @@ import { useRides } from '../context/RidesContext'; // Import useRides hook for 
 import { formatTime, formatDate } from '../utils/helpers';
 import { showNotification } from '../utils/notifications';
 import RideCard from '../components/RideCard';
-import { FaEdit, FaTrash, FaTruck } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaTruck, FaUsers } from 'react-icons/fa';
 
 const MyRides = () => {
     const { user } = useAuth();
@@ -139,15 +139,16 @@ const MyRides = () => {
                         ) : (
                             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {postedRides.map((ride) => (
-                                    <div key={ride.id || ride._id} className="relative">
+                                    <div key={ride.id || ride._id} className="flex flex-col">
                                         <RideCard
                                             ride={ride}
                                             onRemoveUser={handleRemoveUser}
                                             showActions={false}
                                             showChat={true}
+                                            showPassengerList={true}
                                         />
-                                        {/* Action buttons overlay */}
-                                        <div className="absolute bottom-4 left-4 right-4 flex gap-2">
+                                        {/* Action buttons below the card */}
+                                        <div className="flex gap-2 mt-3">
                                             <button
                                                 onClick={() => handleEditRide(ride.id || ride._id)}
                                                 className="flex-1 bg-blue-500 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-600 transition-colors flex items-center justify-center"
@@ -204,6 +205,7 @@ const MyRides = () => {
                                         }}
                                         showActions={true}
                                         showChat={true}
+                                        showPassengerList={false}
                                     />
                                 ))}
                             </div>

@@ -151,7 +151,8 @@ const LiveRides = () => {
                             ride={ride}
                             onJoinRide={handleJoinRide}
                             showActions={true}
-                            showChat={true}
+                            showChat={false}
+                            showPassengerList={false}
                         />
                     ))}
                 </div>

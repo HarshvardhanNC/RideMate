@@ -82,7 +82,7 @@ app.get('/api-docs', (req, res) => {
 
 // API routes with rate limiting
 app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/rides', rideCreationLimiter, rideRoutes);
+app.use('/api/rides', rideRoutes); // Remove global rate limiter, apply it per route instead
 app.use('/api/users', userRoutes);
 
 // Root endpoint

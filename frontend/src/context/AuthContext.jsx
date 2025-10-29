@@ -20,8 +20,11 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         // Check if user is logged in on app start
         const savedUser = storage.get('user');
-        if (savedUser) {
+        const savedToken = localStorage.getItem('token');
+        
+        if (savedUser && savedToken) {
             setUser(savedUser);
+            apiService.setToken(savedToken);
         }
         setLoading(false);
     }, []);
@@ -30,9 +33,19 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await apiService.login({ email, password });
             
-            if (response.success) {
-                setUser(response.user);
-                storage.set('user', response.user);
+            if (response.success && response.token) {
+                // Store token
+                apiService.setToken(response.token);
+                
+                // Store user with proper _id field
+                const userData = {
+                    ...response.user,
+                    _id: response.user._id || response.user.id,
+                    id: response.user._id || response.user.id
+                };
+                
+                setUser(userData);
+                storage.set('user', userData);
                 showNotif('Welcome to RideMate!', 'success');
                 return { success: true };
             } else {
@@ -40,6 +53,7 @@ export const AuthProvider = ({ children }) => {
                 return { success: false, error: response.message };
             }
         } catch (error) {
+            console.error('Login error:', error);
             showNotif('Login failed. Please try again.', 'error');
             return { success: false, error: error.message };
         }
@@ -49,9 +63,19 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await apiService.register(userData);
             
-            if (response.success) {
-                setUser(response.user);
-                storage.set('user', response.user);
+            if (response.success && response.token) {
+                // Store token
+                apiService.setToken(response.token);
+                
+                // Store user with proper _id field
+                const userDataWithId = {
+                    ...response.user,
+                    _id: response.user._id || response.user.id,
+                    id: response.user._id || response.user.id
+                };
+                
+                setUser(userDataWithId);
+                storage.set('user', userDataWithId);
                 showNotif('Account created successfully! Welcome to RideMate!', 'success');
                 return { success: true };
             } else {
@@ -59,6 +83,7 @@ export const AuthProvider = ({ children }) => {
                 return { success: false, error: response.message };
             }
         } catch (error) {
+            console.error('Signup error:', error);
             showNotif('Signup failed. Please try again.', 'error');
             return { success: false, error: error.message };
         }
@@ -72,6 +97,8 @@ export const AuthProvider = ({ children }) => {
         } finally {
             setUser(null);
             storage.remove('user');
+            localStorage.removeItem('token');
+            apiService.removeToken();
             showNotif('Logged out successfully', 'info');
         }
     };

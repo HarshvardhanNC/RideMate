@@ -155,6 +155,9 @@ export const RidesProvider = ({ children }) => {
 
         try {
             console.log('👥 Joining ride:', rideId);
+            console.log('👤 Current user:', user);
+            console.log('🔑 Has token:', !!localStorage.getItem('token'));
+            
             // Try API first
             const response = await apiService.joinRide(rideId);
             console.log('📡 Join ride API response:', response);
@@ -167,53 +170,18 @@ export const RidesProvider = ({ children }) => {
                 
                 showNotification('Successfully joined the ride!', 'success');
                 return { success: true, ride: response.data };
+            } else {
+                // Show the actual error message from the API
+                const errorMessage = response?.message || 'Failed to join ride';
+                console.error('❌ API returned error:', errorMessage);
+                showNotification(errorMessage, 'error');
+                return { success: false, error: errorMessage };
             }
         } catch (error) {
             console.error('❌ Join ride API error:', error);
-        }
-        
-        // Fallback to local update if API fails
-        try {
-            const rideIndex = rides.findIndex(ride => ride.id === rideId);
-            if (rideIndex === -1) {
-                showNotification('Ride not found', 'error');
-                return { success: false, error: 'Ride not found' };
-            }
-
-            const ride = rides[rideIndex];
-            
-            // Check if ride is full
-            if (ride.joinedCount >= ride.totalSeats) {
-                showNotification('This ride is already full', 'warning');
-                return { success: false, error: 'Ride is full' };
-            }
-
-            // Check if user is already in this ride
-            if (ride.joinedBy.includes(user.id)) {
-                showNotification('You are already in this ride', 'warning');
-                return { success: false, error: 'Already joined' };
-            }
-
-            // Update the ride with new user
-            const updatedRide = {
-                ...ride,
-                joinedBy: [...ride.joinedBy, user.id],
-                joinedCount: ride.joinedCount + 1
-            };
-
-            // Update global state
-            const updatedRides = [...rides];
-            updatedRides[rideIndex] = updatedRide;
-            setRides(updatedRides);
-            
-            // Save to localStorage
-            saveRidesToStorage(updatedRides);
-            
-            showNotification('Successfully joined the ride!', 'success');
-            return { success: true, ride: updatedRide };
-        } catch (error) {
-            showNotification('Failed to join ride. Please try again.', 'error');
-            return { success: false, error: error.message };
+            const errorMessage = error.message || 'Failed to join ride. Please try again.';
+            showNotification(errorMessage, 'error');
+            return { success: false, error: errorMessage };
         }
     };
 
@@ -291,21 +259,23 @@ export const RidesProvider = ({ children }) => {
     // Get rides posted by current user - filters rides for "My Rides" page
     const getPostedRides = () => {
         if (!user) return [];
+        const userId = user._id || user.id;
         return rides.filter(ride => {
             // Handle both MongoDB format (poster._id) and local storage format (posterId)
-            const posterId = ride?.poster?._id || ride?.posterId;
-            return posterId === user.id;
+            const posterId = ride?.poster?._id || ride?.poster || ride?.posterId;
+            return posterId === userId;
         });
     };
 
     // Get rides joined by current user - filters rides for "Joined Rides" page
     const getJoinedRides = () => {
         if (!user) return [];
+        const userId = user._id || user.id;
         return rides.filter(ride => 
             ride?.passengers?.some(passenger => 
-                passenger?.user?._id === user.id || passenger?.user === user.id
+                passenger?.user?._id === userId || passenger?.user === userId
             ) && 
-            (ride?.poster?._id !== user.id && ride?.poster !== user.id)
+            (ride?.poster?._id !== userId && ride?.poster !== userId)
         );
     };
 

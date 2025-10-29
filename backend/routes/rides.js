@@ -3,6 +3,7 @@ const { body, validationResult } = require('express-validator');
 const Ride = require('../models/Ride');
 const Message = require('../models/Message');
 const { protect } = require('../middleware/auth');
+const { rideCreationLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
@@ -93,7 +94,7 @@ router.get('/:id', async (req, res) => {
 // @desc    Create new ride
 // @route   POST /api/rides
 // @access  Private
-router.post('/', protect, [
+router.post('/', protect, rideCreationLimiter, [
   body('from').trim().notEmpty().withMessage('Starting location is required'),
   body('to').trim().notEmpty().withMessage('Destination is required'),
   body('date').isISO8601().withMessage('Valid date is required'),
